@@ -21,7 +21,7 @@ abaixo**.
 
 ### Aula 1
 
--   Série de tempo vs. dados independentes
+-   Série de tempo vs. dados independentes
 -   Tendência, sazonalidade e ciclos
 -   Visualizações de sazonalidade
 -   Gráficos de autocorrelação

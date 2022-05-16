@@ -1,0 +1,178 @@
+---
+title: "Modelagem de séries temporais"
+author: "<img src = 'https://d33wubrfki0l68.cloudfront.net/9b0699f18268059bdd2e5c21538a29eade7cbd2b/67e5c/img/logo/cursor1-5.png' width = '20%'>"
+date: ""
+output:
+  xaringan::moon_reader:
+    css: ["css/xaringan-themer.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+knit: pagedown::chrome_print
+---
+
+```{r, child="00-preamble.Rmd"}
+
+```
+
+class: middle, center
+
+# Sobre a Curso-R
+
+---
+
+class: middle, center
+
+## A empresa
+
+.pull-left[
+```{r, echo = FALSE}
+knitr::include_graphics("https://d33wubrfki0l68.cloudfront.net/295643c6243701ae6a9bac3fb8ad467ff0ce3c84/d1785/img/logo/cursor1-41.png")
+```
+
+<br>
+<br>
+
+```{r, echo = FALSE}
+knitr::include_graphics("img/logo_r6.png")
+```
+
+]
+
+.pull-right[
+```{r, echo = FALSE}
+knitr::include_graphics("img/produtos.png")
+```
+]
+
+### [www.curso-r.com](https://www.curso-r.com)
+
+---
+
+## Nossos cursos
+
+.smaller[
+```{r, echo = FALSE}
+templatesR6::criar_slide_nossos_cursos()
+```
+]
+
+---
+class: middle, center
+
+# Sobre o curso
+
+---
+## Conteúdo
+
+### Aula 1
+
+-   Série de tempo vs. dados independentes
+-   Tendência, sazonalidade e ciclos
+-   Visualizações de sazonalidade
+-   Gráficos de autocorrelação
+
+### Aula 2
+
+-   Decomposição de série temporais
+-   Previsão de séries temporais
+-   Métricas de erro
+-   Métodos simples de previsão
+
+### Aula 3
+
+-   Suavização exponencial
+-   Introdução aos modelos ARIMA
+-   Ajuste de um modelo ARIMA
+
+---
+## Conteúdo
+
+### Aula 4
+
+-   Covariáveis em modelos ARIMA
+-   Construção de covariáveis de séries temporais
+
+### Aula 5
+
+-   Séries temporais hierárquicas e agrupadas
+
+---
+
+## Material
+
+https://otexts.com/fpp2/
+
+```{r}
+knitr::include_graphics("https://otexts.com/fpp2/fpp2_cover.jpg")
+```
+
+
+---
+## Dinâmica do curso
+
+- As aulas terão partes mais teóricas, mas em grande parte do tempo estaremos executando código em R que vocÊ pode acompanhar se quiser.
+
+- Teremos exercícios para serem feitos "em casa".
+
+- O objetivo dos exercícios é gerar dúvidas. **Com exceção do trabalho final, nenhum exercício precisa ser entregue**.
+
+- O certificado será emitido mediante um **trabalho final**. O prazo da entrega final será de pelo menos 2 semanas após a última aula.
+
+- Haverá monitoria para esclarecimento de dúvidas sempre 30 minutos antes do início das aulas.
+
+---
+## Dinâmica das aulas
+
+- Mande dúvidas e comentários no chat em qualquer momento.
+
+- Para falar, levante a mão.
+
+- Algumas dúvidas serão respondidas na hora. Outras serão respondidas mais tarde na própria aula ou em aulas futuras.
+
+- Só interrompa quem estiver falando em caso de emergência.
+
+---
+class: middle, center
+
+# `r blue("Como estudar?")`
+
+---
+# Pratique
+
+- Não se preocupe com estilos de estudo. Use o que te deixar mais confortável.
+
+- Estude um pouco todo dia. Se você tem apenas uma hora para estudar na semana, faça 3 sessões de 20 minutos em dias diferentes.
+
+- Se teste! Coloque em prática o que você aprendeu resolvendo exercícios ou inserindo o R no seu dia-a-dia.
+
+
+<br>
+<br>
+### Referência
+
+[Nahurhodo 205 - Powerpoint é útil para a aprendizagem?](https://www.b9.com.br/shows/naruhodo/naruhodo-205-powerpoint-e-util-para-a-aprendizagem/)
+
+---
+# Tire suas dúvidas
+
+- **Não existe dúvida idiota**.
+ 
+- Fora do horário de aula ou monitoria:
+    - envie suas perguntas gerais sobre o curso no Classroom.
+     
+    - envie preferencialmente suas perguntas sobre R, principalmente as que envolverem código, no [nosso discourse](https://discourse.curso-r.com/).
+
+- [Veja aqui dicas de como fazer uma boa pergunta](https://discourse.curso-r.com/t/como-escrever-uma-boa-pergunta/542).
+
+### Por que usar o discourse?
+
+- Muito melhor para escrever textos que possuem códigos. Com ele, podemos usar o pacote `{reprex}`!
+
+- Mais pessoas acompanhando e respondendo as dúvidas.
+
+- Em um ambiente aberto, as suas dúvidas vão contribuir com a comunidade.
+
+---

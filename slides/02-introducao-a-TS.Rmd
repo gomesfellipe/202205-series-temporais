@@ -23,6 +23,8 @@ class: middle, center
 
 ```{r, include = FALSE}
 
+library(tidyverse)
+
 cetesb_pinheiros <- readRDS("../dados/cetesb_pinheiros.rds")
 
 ```
@@ -54,7 +56,7 @@ Duas variáveis: `tempo` e `x`
 
 .pull-right[
 
-uma variáevl `x` ordenada no tempo
+uma variável `x` ordenada no tempo
 
 ```{r, echo = FALSE}
   knitr::kable(
@@ -70,6 +72,7 @@ uma variáevl `x` ordenada no tempo
 ```
 
 ]
+
 
 - Na hora de analisar esses dados, entretanto, pensar que `x` está ordenado no tempo, e não que `tempo` é uma variável, dá **contexto** para as análises e provavelmente vai produzir resultados diferentes.
 
@@ -87,7 +90,7 @@ uma variáevl `x` ordenada no tempo
 
 # Porque séries temporais são especiais
 
-- Na prática, todos os dados podem ser interpretados como séries temporais, já que o tempo nunca para de passar, então pra qualquer variável $X_1, X_2, ..., X_n$ é verdade que elas estão ordenadas no tempo de algum jeito. 
+- O tempo nunca para de passar: então pra qualquer variável $X_1, X_2, ..., X_n$ é verdade que elas estão ordenadas no tempo de algum jeito. 
 
 - Vamos querer pensar que uma lista de números é uma série temporal porque **normalmente** tem uma diferença importante com relação a dados em que podemos ignorar a relação com o tempo. Nesse curso o contrário de "série temporal" será **dado transversal**.
 
@@ -103,9 +106,7 @@ $$X_2 \text{ não tem relação com }X_1\text{, nem com }X_3\text{, nem com }X_4
 
 - O conceito estatístico de dependência é muito importante aqui. Duas variáveis $X$ e $Y$ **não tem relação** se, quando fizermos um gráfico de $X$ contra $Y$ encontramos uma nuvem em que $Y$ sempre se distribui mais ou menos do mesmo jeito se fizermos cortes em $X$.
 
-- Exemplo:
-
-```{r, echo = FALSE}
+```{r, echo = FALSE, fig.height=6}
 
 set.seed(11071995)
 
@@ -127,7 +128,7 @@ tibble(
 
 - Outro exemplo de variáveis não relacionadas:
 
-```{r}
+```{r, echo = FALSE}
 
 set.seed(11071995)
 
@@ -146,8 +147,75 @@ tibble(
 
 ---
 
-# Relações entre variáveis:
+# Relações entre variáveis
 
-- Exemplo de variáveis relacionadas
+- Exemplo de variáveis relacionadas:
 
+```{r, echo = FALSE}
+set.seed(11071995)
+
+tibble(
+  X = runif(5000, -2, 2),
+  Y = X + rnorm(5000, 0, .5)) |> 
+  ggplot(aes(x = X, y = Y)) + 
+  geom_point() + 
+  theme_bw() +
+  geom_vline(xintercept = -1.8, col = 'red', size = 2) +
+  geom_vline(xintercept = -1, col = 'red', size = 2) +
+  geom_vline(xintercept = 1, col = 'darkgreen', size = 2) +
+  geom_vline(xintercept = 1.8, col = 'darkgreen', size = 2)
+```
+
+---
+
+# Variáveis relacionadas e séries temporais
+
+- No geral, quando manipulamos uma série temporal $X_t$ e construímos gráficos, por exemplo, de $X_{t-1}$ contra $X_t$, vamos identificar que existe relação entre essas variáveis.
+
+- Chamamos os $X_{t-i}$ de **variáveis defasadas** ou **lags**. 
+
+- Vamos ao R
+
+---
+
+# Relações entre variáveis
+
+- Cuidado com a correlação linear, os gráficos são bons!
+
+```{r, echo = FALSE, message=FALSE, error=FALSE, warning=FALSE}
+anscombe_tidy <- anscombe %>%
+    mutate(observation = seq_len(n())) %>%
+    gather(key, value, -observation) %>%
+    separate(key, c("variable", "set"), 1, convert = TRUE) %>%
+    mutate(set = c("I", "II", "III", "IV")[set]) %>%
+    spread(variable, value)
+
+ggplot(anscombe_tidy, aes(x, y)) +
+    geom_point(size = 3) +
+    facet_wrap(~ set) +
+    geom_smooth(method = "lm", se = FALSE, size =2) +
+    theme_bw()
+```
+
+---
+
+# Padrões comuns em séries temporais
+
+Normalmente, tanto para previsão quanto para descrever vamos tentar enquadrar as séries temporais de acordo com alguns padrões:
+
+- **Sazonalidade**: Periodicamente acontece alguma coisa com a série temporal? Padrões semanais, mensais etc?
+
+- **Tendência**: Tem algo sistematicamente acontecendo nos dados? Por exemplo, a quantidade aumenta a cada ano?
+
+---
+
+# Decomposição STL
+
+Um jeito de analisar séries temporais, inclusive de produzir previsões é aplicar o que se chama normalmente de decomposição STL, que tenta ajustar funções muito flexíveis na esquação abaixo:
+
+$$X(t) = S(t) + T(t) + E(t).$$
+
+Aqui teremos $S(t)$ sendo ua componente sazonal periódica, $T(t)$ é algo que aumenta ao longo do tempo.
+
+---
 

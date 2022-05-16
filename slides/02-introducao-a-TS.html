@@ -47,21 +47,6 @@ class: middle, center
 Duas variáveis: `tempo` e `x`
 
 
-```r
-  knitr::kable(
-    tibble::tribble(
-      ~tempo, ~x,
-      1, 0.1,
-      5, 0.18,
-      3, 0.19,
-      2, 0.22,
-      4, 0.23
-    )
-  )
-```
-
-
-
 | tempo|    x|
 |-----:|----:|
 |     1| 0.10|
@@ -73,22 +58,7 @@ Duas variáveis: `tempo` e `x`
 
 .pull-right[
 
-uma variáevl `x` ordenada no tempo
-
-
-```r
-  knitr::kable(
-    tibble::tribble(
-      ~tempo, ~x,
-      1, 0.1,
-      2, 0.22,
-      3, 0.19,
-      4, 0.23,
-      5, 0.18
-    )
-  )
-```
-
+uma variável `x` ordenada no tempo
 
 
 | tempo|    x|
@@ -101,9 +71,77 @@ uma variáevl `x` ordenada no tempo
 
 ]
 
+
 - Na hora de analisar esses dados, entretanto, pensar que `x` está ordenado no tempo, e não que `tempo` é uma variável, dá **contexto** para as análises e provavelmente vai produzir resultados diferentes.
 
 ---
+
+# Séries temporais no R
+
+- Essa diferença entre os jeitos de interpretar uma série temporal resulta entre representações diferentes dentro do R também.
+
+- `tibble` é o tipo de objeto padrão do `tidyverse`. Para interpretar uma `tibble` sempre como uma série temporal em qualquer contexto, vamos usar um pacote que se chama `tsibble`.
+
+- Vamos ao R
+
+---
+
+# Porque séries temporais são especiais
+
+- O tempo nunca para de passar: então pra qualquer variável `\(X_1, X_2, ..., X_n\)` é verdade que elas estão ordenadas no tempo de algum jeito. 
+
+- Vamos querer pensar que uma lista de números é uma série temporal porque **normalmente** tem uma diferença importante com relação a dados em que podemos ignorar a relação com o tempo. Nesse curso o contrário de "série temporal" será **dado transversal**.
+
+- Na maior parte das aplicações e análises **transversais** aceitamos as hipóteses:
+
+`$$X_1 \text{ não tem relação com }X_2\text{, nem com }X_3\text{, nem com }X_4\text{ etc}$$`
+`$$X_2 \text{ não tem relação com }X_1\text{, nem com }X_3\text{, nem com }X_4\text{ etc}$$`
+- Nas séries temporais essa é exatamente a hipótese que nós jogamos fora. Nesse tipo de análise vamos sempre pensar que os dados da série temporal tem algum tipo de relação importante que precisamos dar atenção na hora de analisar.
+
+---
+
+# Relações entre variáveis
+
+- O conceito estatístico de dependência é muito importante aqui. Duas variáveis `\(X\)` e `\(Y\)` **não tem relação** se, quando fizermos um gráfico de `\(X\)` contra `\(Y\)` encontramos uma nuvem em que `\(Y\)` sempre se distribui mais ou menos do mesmo jeito se fizermos cortes em `\(X\)`.
+
+![](02-introducao-a-TS_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+
+---
+
+# Relações entre variáveis
+
+- Outro exemplo de variáveis não relacionadas:
+
+![](02-introducao-a-TS_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+
+---
+
+# Relações entre variáveis
+
+- Exemplo de variáveis relacionadas:
+
+![](02-introducao-a-TS_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+
+---
+
+# Variáveis relacionadas e séries temporais
+
+- No geral, quando manipulamos uma série temporal `\(X_t\)` e construímos gráficos, por exemplo, de `\(X_{t-1}\)` contra `\(X_t\)`, vamos identificar que existe relação entre essas variáveis.
+
+- Chamamos os `\(X_{t-i}\)` de **variáveis defasadas** ou **lags**. 
+
+- Vamos ao R
+
+---
+
+# Relações entre variáveis
+
+- Cuidado com a correlação linear, os gráficos são bons!
+
+![](02-introducao-a-TS_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+
+---
+
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
