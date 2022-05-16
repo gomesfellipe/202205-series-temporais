@@ -1,0 +1,153 @@
+---
+title: "Modelagem de Séries Temporais"
+author: "<img src = 'https://d33wubrfki0l68.cloudfront.net/9b0699f18268059bdd2e5c21538a29eade7cbd2b/67e5c/img/logo/cursor1-5.png' width = '20%'>"
+date: ""
+output:
+  xaringan::moon_reader:
+    css: ["css/xaringan-themer.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+knit: pagedown::chrome_print
+---
+
+```{r, child="00-preamble.Rmd"}
+
+```
+
+class: middle, center
+
+---
+
+```{r, include = FALSE}
+
+cetesb_pinheiros <- readRDS("../dados/cetesb_pinheiros.rds")
+
+```
+
+
+# Séries temporais
+
+- Uma série temporal pode ser entendida como uma lista de números associadas a marcos de tempo.
+
+- Do ponto de vista estritamente prático não há diferença entre:
+
+.pull-left[
+
+Duas variáveis: `tempo` e `x`
+
+```{r, echo = FALSE}
+  knitr::kable(
+    tibble::tribble(
+      ~tempo, ~x,
+      1, 0.1,
+      5, 0.18,
+      3, 0.19,
+      2, 0.22,
+      4, 0.23
+    )
+  )
+```
+]
+
+.pull-right[
+
+uma variáevl `x` ordenada no tempo
+
+```{r, echo = FALSE}
+  knitr::kable(
+    tibble::tribble(
+      ~tempo, ~x,
+      1, 0.1,
+      2, 0.22,
+      3, 0.19,
+      4, 0.23,
+      5, 0.18
+    )
+  )
+```
+
+]
+
+- Na hora de analisar esses dados, entretanto, pensar que `x` está ordenado no tempo, e não que `tempo` é uma variável, dá **contexto** para as análises e provavelmente vai produzir resultados diferentes.
+
+---
+
+# Séries temporais no R
+
+- Essa diferença entre os jeitos de interpretar uma série temporal resulta entre representações diferentes dentro do R também.
+
+- `tibble` é o tipo de objeto padrão do `tidyverse`. Para interpretar uma `tibble` sempre como uma série temporal em qualquer contexto, vamos usar um pacote que se chama `tsibble`.
+
+- Vamos ao R
+
+---
+
+# Porque séries temporais são especiais
+
+- Na prática, todos os dados podem ser interpretados como séries temporais, já que o tempo nunca para de passar, então pra qualquer variável $X_1, X_2, ..., X_n$ é verdade que elas estão ordenadas no tempo de algum jeito. 
+
+- Vamos querer pensar que uma lista de números é uma série temporal porque **normalmente** tem uma diferença importante com relação a dados em que podemos ignorar a relação com o tempo. Nesse curso o contrário de "série temporal" será **dado transversal**.
+
+- Na maior parte das aplicações e análises **transversais** aceitamos as hipóteses:
+
+$$X_1 \text{ não tem relação com }X_2\text{, nem com }X_3\text{, nem com }X_4\text{ etc}$$
+$$X_2 \text{ não tem relação com }X_1\text{, nem com }X_3\text{, nem com }X_4\text{ etc}$$
+- Nas séries temporais essa é exatamente a hipótese que nós jogamos fora. Nesse tipo de análise vamos sempre pensar que os dados da série temporal tem algum tipo de relação importante que precisamos dar atenção na hora de analisar.
+
+---
+
+# Relações entre variáveis
+
+- O conceito estatístico de dependência é muito importante aqui. Duas variáveis $X$ e $Y$ **não tem relação** se, quando fizermos um gráfico de $X$ contra $Y$ encontramos uma nuvem em que $Y$ sempre se distribui mais ou menos do mesmo jeito se fizermos cortes em $X$.
+
+- Exemplo:
+
+```{r, echo = FALSE}
+
+set.seed(11071995)
+
+tibble(
+  X = runif(1000),
+  Y = runif(1000)) |> 
+  ggplot(aes(x = X, y = Y)) + 
+  geom_point() + 
+  theme_bw() +
+  geom_vline(xintercept = 0.125, col = 'red', size = 2) +
+  geom_vline(xintercept = 0.25, col = 'red', size = 2) +
+  geom_vline(xintercept = 0.625, col = 'darkgreen', size = 2) +
+  geom_vline(xintercept = 0.75, col = 'darkgreen', size = 2)
+```
+
+---
+
+# Relações entre variáveis
+
+- Outro exemplo de variáveis não relacionadas:
+
+```{r}
+
+set.seed(11071995)
+
+tibble(
+  X = runif(5000, -2, 2),
+  Y = rnorm(5000)) |> 
+  ggplot(aes(x = X, y = Y)) + 
+  geom_point() + 
+  theme_bw() +
+  geom_vline(xintercept = -1.8, col = 'red', size = 2) +
+  geom_vline(xintercept = -1, col = 'red', size = 2) +
+  geom_vline(xintercept = 1, col = 'darkgreen', size = 2) +
+  geom_vline(xintercept = 1.8, col = 'darkgreen', size = 2)
+
+```
+
+---
+
+# Relações entre variáveis:
+
+- Exemplo de variáveis relacionadas
+
+

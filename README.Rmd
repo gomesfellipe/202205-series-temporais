@@ -1,0 +1,81 @@
+---
+output: github_document
+---
+
+# Séries Temporais
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Repositório principal do curso Séries Temporais.
+
+Inscreva-se no curso: https://loja.curso-r.com/modelagem-de-series-temporais.html
+
+**Acesse o material completo do curso escolhendo uma das turmas abaixo**.
+
+```{r, echo = FALSE}
+
+library(CursoRutils)
+
+listar_turmas_recentes_windows <- function (curso) {
+    lista_repos <- CursoRutils:::list_github_repos()
+    tab_repos <- purrr::map_dfr(lista_repos, ~tibble::tibble(Turma = .x$name, 
+        Github = .x$html_url, arquivado = .$archived, data = .x$created_at))
+    tab_repos %>% dplyr::mutate(ano = lubridate::year(lubridate::as_date(data))) %>% 
+        dplyr::filter(ano >= lubridate::year(Sys.Date()) - 1, 
+            stringr::str_detect(Turma, curso), !stringr::str_detect(Turma, 
+                "main-"), !arquivado) %>% dplyr::mutate(Material = paste0("https://curso-r.github.io/", 
+        Turma), data = lubridate::make_date(stringr::str_sub(Turma, 
+        1, 4), stringr::str_sub(Turma, 5, 6), "01"), Turma = paste(lubridate::month(data, 
+        label = TRUE, abbr = FALSE), 
+        "de", lubridate::year(data))) %>% dplyr::arrange(desc(data)) %>% 
+        dplyr::slice(1:3) %>% dplyr::select(Turma, Material, 
+        Github)
+}
+
+knitr::kable(
+  listar_turmas_recentes_windows("series")
+  )
+```
+
+## Plano de aula atual
+
+### Aula 1
+
+- Série de tempo vs. dados independentes
+- Tendência, sazonalidade e ciclos
+- Visualizações de sazonalidade
+- Gráficos de autocorrelação
+
+### Aula 2
+
+- Decomposição de série temporais
+- Previsão de séries temporais
+- Métricas de erro
+- Métodos simples de previsão
+
+### Aula 3
+
+- Suavização exponencial
+- Introdução aos modelos ARIMA
+- Ajuste de um modelo ARIMA
+
+### Aula 4
+
+- Covariáveis em modelos ARIMA
+- Construção de covariáveis de séries temporais
+
+### Aula 5
+
+- Séries temporais hierárquicas e agrupadas
+  
+```{r eval=FALSE, include=FALSE}
+# para criar o zip do curso:
+ CursoRutils::empacotar_material_alunos("material.txt")
+```
