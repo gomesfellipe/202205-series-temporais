@@ -71,6 +71,85 @@ cetesb_pinheiros_co <- cetesb_pinheiros_co %>%
   )
 
 
+# Backtesting -------------------------------------------------------------
+
+split <- time_series_split(
+  cetesb_pinheiros_co,
+  data,
+  initial = "40 months",
+  assess = "1 month"
+)
+
+backtest <- time_series_cv(
+  training(split),
+  data,
+  initial = "36 months",
+  assess = "1 month",
+  slice_limit = 2
+)
+
+split
+backtest
+plot_time_series_cv_plan(backtest, data, concentracao)
+
+# Ajustando o modelo ------------------------------------------------------
 
 
+library(tidymodels)
+library(modeltime.resample)
 
+# Definição do modelo inicial
+
+model_spec <- modeltime::naive_reg() %>%
+  set_engine("naive")
+
+# AJuste do modelo - por enquanto não vamos usá-lo
+fitted <- model_spec %>%
+  fit(concentracao ~ data, training(split))
+
+# Colocar o modelo na model_tbl
+models_tbl <- modeltime_table(
+  fitted
+)
+
+# Re ajustar o modelo para as amostras do backtesting
+resamples_fitted <- models_tbl  %>%
+  modeltime_fit_resamples(
+    resamples = backtest,
+    control   = control_resamples(verbose = FALSE)
+  )
+
+# Visualizar os resultados
+resamples_fitted %>%
+  plot_modeltime_resamples(.metric_set = metric_set(mae, mape, mase))
+
+resamples_fitted %>%
+  modeltime_resample_accuracy(
+    summary_fns = mean,
+    metric_set = metric_set(mae, mape, mase)
+  )
+
+#....
+# uma vez contentes com os modelos podemos gerar previsões p/ a base de teste
+calibration_tbl <- models_tbl %>%
+  modeltime_calibrate(new_data = testing(split))
+
+forecasts <- calibration_tbl %>%
+  modeltime_forecast(
+    new_data    = testing(split),
+    actual_data = cetesb_pinheiros_co
+  )
+
+calibration_tbl %>%
+  modeltime_accuracy()
+
+# Agora vamos refitar o modelo com a base toda
+
+refit_tbl <- calibration_tbl %>%
+  modeltime_refit(data = cetesb_pinheiros_co)
+
+forecast_futuro <- refit_tbl %>%
+  modeltime_forecast(h = "1 month", actual_data = cetesb_pinheiros_co)
+
+forecast_futuro %>%
+  plot_modeltime_forecast()
