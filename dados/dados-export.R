@@ -15,9 +15,21 @@ soja <- df %>%
     .groups = "drop"
   )
 
-saveRDS(soja, "dados/soja.rds")
+milho <- df %>%
+  left_join(ncm, by = c("CO_NCM", "CO_UNID")) %>%
+  left_join(ncm_sh, by = c("CO_SH6")) %>%
+  filter(CO_SH4 == "1005") %>%
+  group_by(CO_SH4, NO_SH4_POR, CO_ANO, CO_MES) %>%
+  summarise(
+    across(c(QT_ESTAT, KG_LIQUIDO, VL_FOB), .fns = sum, .names = "{.col}"),
+    .groups = "drop"
+  )
 
-soja %>%
+
+saveRDS(soja, "dados/soja.rds")
+saveRDS(milho, "dados/milho.rds")
+
+milho %>%
   mutate(date = lubridate::make_date(CO_ANO, CO_MES)) %>%
   ggplot(aes(x = date, y = KG_LIQUIDO/1000)) +
   geom_line() +
