@@ -289,4 +289,120 @@ class: middle, center
 
 [Vamos ao R!](https://github.com/curso-r/main-series/blob/main/scripts/02-decomposicao.R)
 
+---
+
+# Forecasting
+
+Criar previsões sobre fenômenos é uma tarefa muito difícil e para algumas coisas
+até impossível. Antes de fazer um modelo, é sempre importante pensar em algumas
+coisas:
+
+- O que faz o que está sendo medido se modificar?
+- Temos dados disponíveis?
+- Quanto o passado é parecido com o futuro?
+- O quanto prever pode influenciar o futuro?
+
+> Often in forecasting, a key step is knowing when something can be forecast accurately, and when forecasts will be no better than tossing a coin.
+
+---
+
+# Workflow
+
+Criar previsões é um processo que cíclico. Isto é, vamos aprendendo sobre a base
+de dados conforme visualizamos os resultados dos modelos.
+
+![Workflow do *Forecasting Principles and Practice*](img/workflow-1.png)
+
+---
+
+# Backtesting
+
+Se a quantidade de dados não é limitante essa é a melhor forma de validar e 
+criar confiança nos modelos que construimos.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.dim=c(8,5), fig.retina=2, out.width="100%"}
+library(tidyverse)
+library(timetk)
+
+co <- readRDS("../dados/cetesb_pinheiros_diario_co.rds")
+resample_spec <- time_series_cv(
+  data = co,
+  initial     = "2 years",
+  assess      = "2 months",
+  skip        = "2 months",
+  cumulative  = FALSE,
+  slice_limit = 1
+)
+
+plot_time_series_cv_plan(resample_spec, data, concentracao, .interactive=FALSE)
+```
+
+---
+
+# Backtesting
+
+É possível inclusive, fazer vários períodos de backtesting para ter mais segurança. 
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.dim=c(8,5), fig.retina=2, out.width="100%"}
+library(tidyverse)
+library(timetk)
+
+co <- readRDS("../dados/cetesb_pinheiros_diario_co.rds")
+
+resample_spec <- time_series_cv(data = co,
+                                initial     = "2 years",
+                                assess      = "2 months",
+                                skip        = "2 months",
+                                cumulative  = FALSE,
+                                slice_limit = 3)
+resample_spec %>%
+    plot_time_series_cv_plan(data, concentracao, .interactive = FALSE)
+```
+
+---
+
+# Backtesting
+
+- Ajuda a estimar o erro de previsão de uma forma mais segura do que somente a análise de resíduos.
+- É o equivalente à validação cruzada para séries temporais.
+- Ajuda a evitar overfitting.
+
+- É importante escolher o período de teste de forma que fique parecido com o que pretendemos prever. Ex: não adianta testar o modelo em 2 meses se quando for usá-lo estivermos pegando previsão para 4 meses.
+- Note que em séries temporais, mesmo com backtesting é mais fácil de ter overfitting do que em problemas clássicos de ML. Principalmente quando não entendemos os fatores que influenciam a série.
+
+---
+
+# Métricas
+
+As principais métricas são:
+
+- MAE - Mean absolute error: **não** comparável entre séries.
+- RMSE - Root mean squared error: **não** comparável entre séries.
+- RSQ - R-squared: correlação ao quadrado entre predito e observado.
+
+- MAPE - Mean absolute percentage error: comparável entre séries, porém assimétrica (prever a mais ou a menos tem valores diferentes)
+- SMAPE - Symmetric mean absolute percentage error: tenta corrigir a assimetria do MAPE mas, não funciona muito bem.
+
+- MASE - Mean absolute scaled error: Mais complicado de calcular. Pode ser comparada entre séries e é simétrica.
+
+Pensar na métrica é sempre importante! Dependo do problema você pode querer modificá-la. Por exemplo:
+
+Previsão de demanda: prever abaixo tem um custo 'x', prever acima tem outro custo 'y', qual é maior?
+
+---
+
+# Modelo inicial
+
+Antes de começarmos a usar modelos mais complexos é comum utilizarmos os modelos mais básicos possíveis. 
+
+- Teremos uma visão do quanto a série é 'previsível'.
+- Podemos avaliar se o esforço de fazer um modelo mais complexo tem retorno.
+- Criamos mais conhecimento do que estamos tentando prever.
+
+Dois algoritmos simples:
+
+1. Média móvel: pegamos a média dos últimos 'm' períodos e utilizamos como o valor predito.
+2. Modelo ingênuo: a predição é uma repetição do último valor observado ou, se for sazonal do último período.
+
+
 
