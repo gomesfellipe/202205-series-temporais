@@ -10,7 +10,7 @@ output:
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
-#knit: pagedown::chrome_print
+knit: pagedown::chrome_print
 ---
 
 ```{r, child="00-preamble.Rmd"}
@@ -285,6 +285,8 @@ Vantagens com relação aos outros métodos:
 - Funciona com sazonalidades mais complexas (eg, nao precisa ser mensal, anual, etc.)
 
 ---
+class: middle, center
 
+[Vamos ao R!](https://github.com/curso-r/main-series/blob/main/scripts/02-decomposicao.R)
 
 
