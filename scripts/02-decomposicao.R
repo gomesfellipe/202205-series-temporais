@@ -3,11 +3,11 @@ library(feasts)
 
 # Dados de exportação brasileira de soja obtidos do ComexBrasil.
 
-soja <- readRDS("../dados/soja.rds")
+soja <- readRDS("dados/soja.rds")
 soja_ts <- soja %>%
   mutate(DATA = tsibble::yearmonth(paste(CO_ANO, CO_MES))) %>%
   as_tsibble(index = DATA)
-
+autoplot(soja_ts, KG_LIQUIDO)
 
 # Médias móveis -----------------------------------------------------------
 
@@ -96,5 +96,7 @@ autoplot(stl_components)
 stl_components %>%
   ACF(remainder) %>%
   autoplot()
+
+
 
 

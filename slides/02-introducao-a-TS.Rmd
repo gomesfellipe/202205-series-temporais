@@ -315,6 +315,15 @@ de dados conforme visualizamos os resultados dos modelos.
 
 ---
 
+# Formular o problema de predição
+
+- Definir o 'horizonte' de previsão. Quanto tempo para frente eu preciso prever?
+- Definir a granularidade da previsão? Quero prever diariamente? Mensalmente? 
+- Quais informações adicionais são relevantes para a previsão? 
+Sempre terei essas informações?
+
+---
+
 # Tidy 
 
 Em geral são:
