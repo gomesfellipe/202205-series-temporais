@@ -77,7 +77,7 @@ knitr::kable(
 
 - Séries temporais hierárquicas e agrupadas
   
-```{r eval=FALSE, include=FALSE}
+```{r eval=TRUE, include=FALSE}
 # para criar o zip do curso:
- CursoRutils::empacotar_material_alunos("material.txt")
+ CursoRutils::empacotar_material_alunos("material")
 ```

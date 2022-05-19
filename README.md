@@ -21,15 +21,17 @@ abaixo**.
 
 ### Aula 1
 
--   Série de tempo vs. dados independentes
+-   Série de tempo vs. dados independentes
 -   Tendência, sazonalidade e ciclos
 -   Visualizações de sazonalidade
 -   Gráficos de autocorrelação
+-   `tsibble` e `feast`
 
 ### Aula 2
 
 -   Decomposição de série temporais
 -   Previsão de séries temporais
+-   `timetk` e `modeltime`
 -   Métricas de erro
 -   Métodos simples de previsão
 
