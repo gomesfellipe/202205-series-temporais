@@ -10,7 +10,7 @@ output:
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
-knit: pagedown::chrome_print
+#knit: pagedown::chrome_print
 ---
 
 ```{r, child="00-preamble.Rmd"}
@@ -207,15 +207,84 @@ Normalmente, tanto para previsão quanto para descrever vamos tentar enquadrar a
 
 - **Tendência**: Tem algo sistematicamente acontecendo nos dados? Por exemplo, a quantidade aumenta a cada ano?
 
+
+---
+
+# Entendendo a série temporal
+
+Pensar nos componentes da série (tendência/sazonalidade) ajudam bastante a pensar
+em como melhorar as previsões.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, out.width="100%", fig.dim=c(8, 5), fig.retina=2}
+library(fable)
+library(feasts)
+soja <- readRDS("../dados/soja.rds")
+soja_ts <- soja %>% 
+  mutate(DATA = tsibble::yearmonth(paste(CO_ANO, CO_MES))) %>% 
+  as_tsibble(index = DATA)
+
+soja_ts %>% 
+  model(
+    STL(
+      KG_LIQUIDO ~ trend() + season()
+    )) |>
+  components() %>% 
+  autoplot()
+```
+
+---
+
+# Médias móveis
+
+Médias móveis é uma forma comum de estimar a tendência de uma série temporal,
+retirando variações perródicas que podem não importar.
+
+Ex: Nas notícias sobre COVID é reportado a média móvel dos últimos 7 dias ao invés
+do valor exato.
+
+```{r, echo=FALSE, fig.retina=2, fig.dim=c(8,4), out.width="100%"}
+soja_ts %>% 
+  mutate(
+    MM = slider::slide_dbl(KG_LIQUIDO, .before = 6, .after = 6, mean, complete=TRUE)
+  ) %>% 
+  autoplot(KG_LIQUIDO) +
+  geom_line(aes(y = MM), color = "red")
+```
+
+---
+
+# Decomposição clássica
+
+1. Fazemos a média móvel para estimar a tendência. (chamamos de $\hat{T}$).
+2. Fazemos o valor da série menos a tendência. Agora calculamos a sazonalidade
+fazendo a média dos valores para cada período.
+3. Calculamos o resto.
+
+```{r echo=FALSE, fig.retina=2, fig.dim=c(8,4), out.width="100%", warning=FALSE}
+soja_ts %>%
+  model(
+    classical_decomposition(KG_LIQUIDO, type = "additive")
+  ) %>%
+  components() %>%
+  autoplot()
+```
+
 ---
 
 # Decomposição STL
 
-Um jeito de analisar séries temporais, inclusive de produzir previsões é aplicar o que se chama normalmente de decomposição STL, que tenta ajustar funções muito flexíveis na esquação abaixo:
+Um jeito de analisar séries temporais, inclusive de produzir previsões é aplicar o que se chama normalmente de decomposição STL, que tenta ajustar funções muito flexíveis na equação abaixo:
 
 $$X(t) = S(t) + T(t) + E(t).$$
 
-Aqui teremos $S(t)$ sendo ua componente sazonal periódica, $T(t)$ é algo que aumenta ao longo do tempo.
+Aqui teremos $S(t)$ sendo um componente sazonal periódica, $T(t)$ é algo que aumenta ao longo do tempo.
+
+Vantagens com relação aos outros métodos:
+
+- Sazonalidade pode mudar ao longo do tempo
+- Funciona com sazonalidades mais complexas (eg, nao precisa ser mensal, anual, etc.)
 
 ---
+
+
 

@@ -142,6 +142,61 @@ uma variável `x` ordenada no tempo
 
 ---
 
+# Padrões comuns em séries temporais
+
+Normalmente, tanto para previsão quanto para descrever vamos tentar enquadrar as séries temporais de acordo com alguns padrões:
+
+- **Sazonalidade**: Periodicamente acontece alguma coisa com a série temporal? Padrões semanais, mensais etc?
+
+- **Tendência**: Tem algo sistematicamente acontecendo nos dados? Por exemplo, a quantidade aumenta a cada ano?
+
+
+---
+
+# Entendendo a série temporal
+
+Pensar nos componentes da série (tendência/sazonalidade) ajudam bastante a pensar
+em como melhorar as previsões.
+
+&lt;img src="02-introducao-a-TS_files/figure-html/unnamed-chunk-9-1.png" width="100%" /&gt;
+
+---
+
+# Médias móveis
+
+Médias móveis é uma forma comum de estimar a tendência de uma série temporal,
+retirando variações perródicas que podem não importar.
+
+Ex: Nas notícias sobre COVID é reportado a média móvel dos últimos 7 dias ao invés
+do valor exato.
+
+&lt;img src="02-introducao-a-TS_files/figure-html/unnamed-chunk-10-1.png" width="100%" /&gt;
+
+---
+
+# Decomposição clássica
+
+1. Fazemos a média móvel para estimar a tendência. (chamamos de `\(\hat{T}\)`).
+2. Fazemos o valor da série menos a tendência. Agora calculamos a sazonalidade
+fazendo a média dos valores para cada período.
+3. Calculamos o resto.
+
+&lt;img src="02-introducao-a-TS_files/figure-html/unnamed-chunk-11-1.png" width="100%" /&gt;
+
+---
+
+# Decomposição STL
+
+Um jeito de analisar séries temporais, inclusive de produzir previsões é aplicar o que se chama normalmente de decomposição STL, que tenta ajustar funções muito flexíveis na equação abaixo:
+
+`$$X(t) = S(t) + T(t) + E(t).$$`
+
+Aqui teremos `\(S(t)\)` sendo um componente sazonal periódica, `\(T(t)\)` é algo que aumenta ao longo do tempo.
+
+---
+
+
+
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
