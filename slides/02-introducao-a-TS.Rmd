@@ -315,6 +315,16 @@ de dados conforme visualizamos os resultados dos modelos.
 
 ---
 
+# Tidy 
+
+Em geral são:
+
+- Transformações de escala: para muitos modelos normalizar as variáveis ajuda na estimação por exemplo.
+- Inputação de missing: Às vezes a base possui dados faltantes. Existem técnicas para imputar esses valores de forma que façam sentido para séries.
+- Correção de outliers: Às vezes uma observação é um missing mas, ela é um valor muito diferente da série. Pode ser um erro de medida, ou pode ter sido causada por um evento muito raro. (dependendo do caso pode fazer sentido corrigir.)
+
+---
+
 # Backtesting
 
 Se a quantidade de dados não é limitante essa é a melhor forma de validar e 
