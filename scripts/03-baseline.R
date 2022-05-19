@@ -1,7 +1,7 @@
 
 # Carregar dados ----------------------------------------------------------
 
-cetesb_pinheiros_co <- readr::read_rds("dados/cetesb_pinheiros_diario_co.rds")
+cetesb_pinheiros_co <- readr::read_rds("https://github.com/curso-r/main-series/raw/main/dados/cetesb_pinheiros_diario_co.rds")
 
 # Intro timetk/modeltime --------------------------------------------------
 
