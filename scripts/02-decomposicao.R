@@ -1,15 +1,27 @@
 library(fable)
 library(feasts)
+library(tidyverse)
 
 # Dados de exportação brasileira de soja obtidos do ComexBrasil.
 
-soja <- readRDS("dados/soja.rds")
+soja <- readr::read_rds("https://github.com/curso-r/main-series/raw/main/dados/soja.rds")
+
 soja_ts <- soja %>%
   mutate(DATA = tsibble::yearmonth(paste(CO_ANO, CO_MES))) %>%
   as_tsibble(index = DATA)
+
 autoplot(soja_ts, KG_LIQUIDO)
 
 # Médias móveis -----------------------------------------------------------
+
+x <- 1:100
+x %>% slider::slide_dbl(
+  .before = 6,
+  .after = 6,
+  mean,
+  complete = TRUE
+)
+mean(x[1:7])
 
 soja_ts %>%
   mutate(
@@ -18,6 +30,7 @@ soja_ts %>%
     MM = slider::slide_dbl(KG_LIQUIDO, .before = 6, .after = 6, mean, complete = TRUE)
   ) %>%
   autoplot(KG_LIQUIDO) +
+  #ggplot(aes(x = DATA)) +
   geom_line(aes(y = MM), color = "red")
 
 soja_ts %>%
@@ -28,7 +41,7 @@ soja_ts %>%
       slider::slide_dbl(.before = 5, .after = 6, mean, .complete = TRUE),
     MM = MM1 %>%
       slider::slide_dbl(.before = 1, .after = 0, mean, complete = TRUE)
-  ) %>% view() %>%
+  ) %>%
   autoplot(KG_LIQUIDO) +
   geom_line(aes(y = MM), color = "red")
 
@@ -40,10 +53,11 @@ decomposicao <- soja_ts %>%
     # aqui escolhemos 5 antes e 6 depois e depois tiramos a média novamente
     # meses
     tendencia = KG_LIQUIDO %>%
-      slider::slide_dbl(.before = 5, .after = 6, mean, .complete = TRUE) %>%
+      slider::slide_dbl(.before = 5, .after = 6, mean, complete = TRUE) %>%
       slider::slide_dbl(.before = 1, .after = 0, mean, complete = TRUE),
     estacionaria = KG_LIQUIDO - tendencia
   ) %>%
+  #tibble::as_tibble() %>%
   group_by(CO_MES) %>%
   mutate(
     sazonalidade = mean(estacionaria, na.rm = TRUE),
@@ -66,7 +80,7 @@ decomposicao %>%
 
 soja_ts %>%
   model(
-    classical_decomposition(KG_LIQUIDO, type = "additive")
+    classical_decomposition(KG_LIQUIDO, type = "multiplicative")
   ) %>%
   components() %>%
   autoplot()
