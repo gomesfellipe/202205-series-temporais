@@ -1,11 +1,7 @@
 
 # Carregar dados ----------------------------------------------------------
 
-cetesb_pinheiros_co <- readRDS("dados/cetesb_pinheiros_diario_co.rds") |>
-  mutate(
-    mes = lubridate::month(data),
-    Mes = lubridate::floor_date(data, "month")
-  )
+cetesb_pinheiros_co <- readr::read_rds("https://github.com/curso-r/main-series/raw/main/dados/cetesb_pinheiros_diario_co.rds")
 
 # Intro timetk/modeltime --------------------------------------------------
 
