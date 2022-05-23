@@ -2,47 +2,55 @@ library(fable)
 library(feasts)
 library(timetk)
 library(modeltime)
+library(tidymodels)
 library(tidyverse)
 
-cerveja <- readRDS("dados/cerveja.rds") |>
-  mutate(DATA = tsibble::yearmonth(paste(CO_ANO, CO_MES)),
-         DATA_dt = lubridate::make_date(CO_ANO, CO_MES))
+anac <- readRDS("dados/anac-sp.rds") %>%
+  mutate(DATA_ym = tsibble::yearmonth(paste(ANO, MES, sep = "-"))) %>%
+  mutate(
+    TEMPO_DESDE_INICIO = difftime(
+      DATA,
+      lubridate::ymd("1999-12-01"),
+      units = "days"
+    )/30,
+    LAG_1 = lag(PASSAGEIROS_PAGOS, 1, default = 0)
+  )
 
-cerveja_ts <- cerveja %>%
-  as_tsibble(index = DATA) |>
-  select(KG_LIQUIDO, everything())
+anac %>%
+  plot_time_series(DATA, PASSAGEIROS_PAGOS)
 
-autoplot(cerveja_ts, KG_LIQUIDO)
+anac_ts <- anac %>%
+  as_tsibble(index = DATA_ym) |>
+  select(PASSAGEIROS_PAGOS, everything())
 
-autoplot(stl_components)
+autoplot(anac_ts)
 
-gg_season(cerveja_ts)
-
-stl_components <- cerveja_ts %>%
+stl_components <- anac_ts %>%
   model(
-    STL(KG_LIQUIDO ~ season(12) + trend())
+    STL(PASSAGEIROS_PAGOS ~ season(12) + trend())
   ) %>%
   components()
 
-stl_components |>
-  autoplot()
+autoplot(stl_components)
 
 stl_components %>%
   ACF(remainder) %>%
   autoplot()
 
+gg_season(anac_ts)
+
 # Modelo
 
 split <- time_series_split(
-  cerveja,
-  DATA_dt,
-  initial = "23 year",
-  assess = "2 year"
+  anac,
+  DATA,
+  initial = "20 years",
+  assess = "12 month"
 )
 
 plot_time_series_cv_plan(
   tk_time_series_cv_plan(split),
-  DATA_dt, KG_LIQUIDO)
+  DATA, PASSAGEIROS_PAGOS)
 
 # Definição do modelo inicial
 
@@ -50,33 +58,20 @@ model_spec <- parsnip::linear_reg() %>%
   set_engine("lm")
 
 # AJuste do modelo - por enquanto não vamos usá-lo
-fitted <- model_spec |>
-  fit(KG_LIQUIDO ~ CO_ANO + CO_MES, training(split))
+modelo1 <- model_spec |>
+  fit(PASSAGEIROS_PAGOS ~ ANO + as.factor(MES), training(split))
 
-fitted_lag <- model_spec |>
-  fit(KG_LIQUIDO ~ CO_ANO + CO_MES + I(lag(KG_LIQUIDO, 1, 0)), training(split))
+modelo2 <- model_spec |>
+  fit(PASSAGEIROS_PAGOS ~ TEMPO_DESDE_INICIO + as.factor(MES), training(split))
 
-fitted_lag_sem_season <- model_spec |>
-  fit(KG_LIQUIDO ~ CO_ANO + I(lag(KG_LIQUIDO, 1, 0)), training(split))
-
-fitted_lag_1_e_2 <- model_spec |>
-  fit(KG_LIQUIDO ~ CO_ANO +
-        I(lag(KG_LIQUIDO, 1, 0)) +
-        I(lag(KG_LIQUIDO, 2, 0)), training(split))
-
-fitted_lag_1_a_3 <- model_spec |>
-  fit(KG_LIQUIDO ~ CO_ANO +
-        I(lag(KG_LIQUIDO, 1, 0))+
-        I(lag(KG_LIQUIDO, 2, 0))+
-        I(lag(KG_LIQUIDO, 3, 0)), training(split))
+modelo3 <- model_spec |>
+  fit(PASSAGEIROS_PAGOS ~ TEMPO_DESDE_INICIO + as.factor(MES), training(split))
 
 
 models_tbl <- modeltime_table(
-  fitted,
-  fitted_lag,
-  fitted_lag_sem_season,
-  fitted_lag_1_e_2,
-  fitted_lag_1_a_3
+  modelo1,
+  modelo2,
+  modelo3
 )
 
 calibration_tbl <- models_tbl %>%
@@ -85,7 +80,7 @@ calibration_tbl <- models_tbl %>%
 forecasts <- calibration_tbl %>%
   modeltime_forecast(
     new_data    = testing(split),
-    actual_data = cerveja
+    actual_data = anac
   )
 
 calibration_tbl %>%
@@ -99,57 +94,3 @@ modeltime_residuals(calibration_tbl) |>
 modeltime_residuals(calibration_tbl) |>
   group_by(.model_id) |>
   plot_acf_diagnostics(.index, .residuals)
-
-model_arima <- modeltime::arima_reg(
-  #non_seasonal_ar = 1
-  ) |>
-  set_engine("auto_arima")
-
-fit_arima <- model_arima |>
-  fit(KG_LIQUIDO ~ DATA_dt, data = training(split))
-
-treino <- training(split)$KG_LIQUIDO
-
-
-plot(treino)
-arima_fit_forecast <- forecast::Arima(treino, order = c(1,0,0))
-
-plot(forecast::forecast(arima_fit_forecast))
-
-models_tbl <- modeltime_table(
-  fitted,
-  #fitted_lag_1_a_3,
-  fit_arima
-)
-
-calibration_tbl <- models_tbl %>%
-  modeltime_calibrate(new_data = testing(split))
-
-forecasts <- calibration_tbl %>%
-  modeltime_forecast(
-    new_data    = testing(split),
-    actual_data = cerveja
-  )
-
-plot_modeltime_forecast(forecasts)
-
-calibration_tbl |>
-  modeltime_residuals() |>
-  plot_modeltime_residuals()
-
-modeltime_residuals(calibration_tbl) |>
-  group_by(.model_id) |>
-  plot_acf_diagnostics(.index, .residuals)
-
-calibration_tbl %>%
-  modeltime_accuracy()
-
-# outra possibilidade
-
-# devtools::install_github("beatrizmilz/mananciais")
-
-chuva_tiete <- mananciais::mananciais |>
-  filter(sistema == "Alto Tietê") |>
-  group_by(mes = lubridate::floor_date(data, "month")) |>
-  summarise(pluviometria_dia = sum(pluviometria_dia))
-
