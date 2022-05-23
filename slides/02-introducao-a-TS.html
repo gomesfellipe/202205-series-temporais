@@ -308,6 +308,105 @@ Dois algoritmos simples:
 1. Média móvel: pegamos a média dos últimos 'm' períodos e utilizamos como o valor predito.
 2. Modelo ingênuo: a predição é uma repetição do último valor observado ou, se for sazonal do último período.
 
+---
+
+# Regressão Linear
+
+Em alguns casos é possível utilizarmos modelos de regressão para fazer previsão
+de séries temporais. 
+
+`$$y = \beta_0 + \beta_1x_1 + \beta_2x_2 + ...$$`
+
+Nesse caso, adicionamos variáveis preditoras (explicativas) que ajudam a controlar
+o efeito temporal - includindo tendência e sazonalidade. Por exemplo:
+
+- Categórias indicando mês, dia da semana, etc.
+- Variáveis numéricas que indicam a tendência (tempo desde o início, etc)
+- Outras flags que podem ajudar a explicar períodos atípicos, ou mudanças de tendência.
+- Muito **cuidado** com variáveis que precisam ser conhecidas no período de previsão.
+
+---
+
+# Regressão (Revisão)
+
+Variáveis categóricas em regressão são primeiro transformadas em um conjunto de
+variáveis indicadoras. É possível pensar que a regressão de um valor por uma 
+única variável categórica tem relação direta com calcular a média do `\(y\)` para cada
+nível de `\(x\)`.
+
+Exemplo:
+
+
+```r
+y &lt;- 1:8
+x &lt;- c("a", "a", "a", "b", "b", "b", "c", "c")
+
+coef(summary(lm(y ~ x)))
+```
+
+```
+##             Estimate Std. Error  t value    Pr(&gt;|t|)
+## (Intercept)      2.0  0.5477226 3.651484 0.014725401
+## xb               3.0  0.7745967 3.872983 0.011724811
+## xc               5.5  0.8660254 6.350853 0.001429495
+```
+
+```r
+tapply(y, x, mean)
+```
+
+```
+##   a   b   c 
+## 2.0 5.0 7.5
+```
+
+---
+
+# Interação na regressão
+
+Podemos usar interação nos modelos de regressão quando temos a suposição de que
+a inclinação da reta pode mudar dependendo do nível de alguma variável. 
+
+&lt;img src="02-introducao-a-TS_files/figure-html/unnamed-chunk-15-1.png" width="100%" /&gt;
+
+---
+
+# Suavização exponencial
+
+É uma classe de modelos que em geral considera a suposição de que observações que
+estão mais próximas tem maior peso na hora de calcular a próxima previsão e que 
+esses pesos diminuem *exponencialmente* ao longo do tempo.
+
+A ideia é dos ansos 1950 e ao longo do tempo foi extendida para permitir incorporar
+tendência, sazonalidade entre outros.
+
+Em comparação com a regressão, o método faz suposições adicionais que permitem
+reduzir o número de parâmetros e portanto, fazendo previsões mais robustas.
+
+---
+
+# Suavização exponencial simples
+
+A forma mais simples de suavização exponencial não considera a existência de 
+tendência nem sazonalidade. O modelo pode ser descrito, entre outros formatos,
+na forma de componentes - que será útil quando estudarmos as extensões:
+
+$$
+`\begin{align*}
+  \text{Forecast equation}  &amp;&amp; \hat{y}_{t+h|t} &amp; = \ell_{t}\\
+  \text{Smoothing equation} &amp;&amp; \ell_{t}        &amp; = \alpha y_{t} + (1 - \alpha)\ell_{t-1},
+\end{align*}`
+$$
+
+Se abrirmos essa fórmula para `\(h=1\)` teríamos algo:
+
+$$
+`\begin{equation}
+  \hat{y}_{T+1|T} = \alpha y_T + \alpha(1-\alpha) y_{T-1} + \alpha(1-\alpha)^2 y_{T-2}+ \cdots
+\end{equation}`
+$$
+O problema fica resumido a estimar dois parâmetros: `\(\ell_0\)` e `\(\alpha\)`.
+
 
 
     </textarea>
