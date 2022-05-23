@@ -24,7 +24,7 @@ suav_exp <- function(y) {
 }
 
 y <- soja$KG_LIQUIDO/1000
-opt <- optim(fn = suav_exp(y), par = c(0, mean(y)))
-opt$par[1]
-sigmoid(opt$par[2])
+opt <- optim(fn = suav_exp(y), par = c(0, y[1]))
+sigmoid(opt$par[1])
+opt$par[2]
 
