@@ -5,7 +5,7 @@ library(modeltime)
 library(tidymodels)
 library(tidyverse)
 
-anac <- readRDS("dados/anac-sp.rds") %>%
+anac <- readr::read_rds("https://github.com/curso-r/main-series/blob/main/dados/anac-sp.rds?raw=true") %>%
   mutate(DATA_ym = tsibble::yearmonth(paste(ANO, MES, sep = "-"))) %>%
   mutate(
     TEMPO_DESDE_INICIO = difftime(
