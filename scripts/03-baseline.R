@@ -26,10 +26,17 @@ cetesb_pinheiros_co %>%
 
 # Tidy --------------------------------------------------------------------
 
+library(tidyverse)
+
 # missing implícito...
 
 cetesb_pinheiros_co_implicito <- cetesb_pinheiros_co %>%
   filter(!is.na(concentracao))
+
+cetesb_pinheiros_co_implicito %>%
+  plot_stl_diagnostics(data, concentracao)
+
+sum(is.na(cetesb_pinheiros_co_implicito$concentracao))
 
 # transforma missing implícitos em missing explícitos.
 cetesb_pinheiros_co_implicito <- cetesb_pinheiros_co_implicito %>%
@@ -69,6 +76,8 @@ cetesb_pinheiros_co <- cetesb_pinheiros_co %>%
 
 # Backtesting -------------------------------------------------------------
 
+library(tidymodels)
+
 split <- time_series_split(
   cetesb_pinheiros_co,
   data,
@@ -76,12 +85,17 @@ split <- time_series_split(
   assess = "1 month"
 )
 
+split %>%
+  tk_time_series_cv_plan() %>%
+  plot_time_series_cv_plan(data, concentracao)
+
 backtest <- time_series_cv(
   training(split),
   data,
-  initial = "36 months",
+  initial = "24 months",
   assess = "1 month",
-  slice_limit = 2
+  skip = "1 month",
+  slice_limit = 3
 )
 
 split
@@ -90,22 +104,36 @@ plot_time_series_cv_plan(backtest, data, concentracao)
 
 # Ajustando o modelo ------------------------------------------------------
 
-
 library(tidymodels)
 library(modeltime.resample)
 
 # Definição do modelo inicial
 
+# parecido com a sintaxe do parsnip/tidymodels
+# linear_reg() %>%
+#   set_mode("regression") %>%
+#   set_engine("glmnet")
+
 model_spec <- modeltime::naive_reg() %>%
   set_engine("naive")
 
 # AJuste do modelo - por enquanto não vamos usá-lo
+# lm(y ~ x1 + x2 + x3)
 fitted <- model_spec %>%
   fit(concentracao ~ data, training(split))
 
+
+modelo_naive_com_sazonalidade <- modeltime::naive_reg(seasonal_period = "1 year") %>%
+  set_engine("snaive")
+
+fitted2 <- modelo_naive_com_sazonalidade %>%
+  fit(concentracao ~ data, training(split))
+
+
 # Colocar o modelo na model_tbl
 models_tbl <- modeltime_table(
-  fitted
+  fitted,
+  fitted2
 )
 
 # Re ajustar o modelo para as amostras do backtesting
@@ -116,13 +144,14 @@ resamples_fitted <- models_tbl  %>%
   )
 
 # Visualizar os resultados
+# metricas do pacote yardstick.
 resamples_fitted %>%
   plot_modeltime_resamples(.metric_set = metric_set(mae, mape, mase))
 
 resamples_fitted %>%
   modeltime_resample_accuracy(
     summary_fns = mean,
-    metric_set = metric_set(mae, mape, mase)
+    metric_set = metric_set(mae, mape, mase, rmse)
   )
 
 #....
@@ -138,6 +167,8 @@ forecasts <- calibration_tbl %>%
 
 calibration_tbl %>%
   modeltime_accuracy()
+
+plot_modeltime_forecast(forecasts)
 
 # Agora vamos refitar o modelo com a base toda
 

@@ -62,10 +62,7 @@ modelo1 <- model_spec |>
   fit(PASSAGEIROS_PAGOS ~ ANO + as.factor(MES), training(split))
 
 modelo2 <- model_spec |>
-  fit(PASSAGEIROS_PAGOS ~ TEMPO_DESDE_INICIO + as.factor(MES), training(split))
-
-modelo3 <- model_spec |>
-  fit(PASSAGEIROS_PAGOS ~ TEMPO_DESDE_INICIO + as.factor(MES), training(split))
+  fit(PASSAGEIROS_PAGOS ~ as.factor(MES), training(split))
 
 
 models_tbl <- modeltime_table(
