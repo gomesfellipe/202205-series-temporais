@@ -481,7 +481,7 @@ mtcars %>%
 estão mais próximas tem maior peso na hora de calcular a próxima previsão e que 
 esses pesos diminuem *exponencialmente* ao longo do tempo.
 
-A ideia é dos ansos 1950 e ao longo do tempo foi extendida para permitir incorporar
+A ideia é dos anos 1950 e ao longo do tempo foi extendida para permitir incorporar
 tendência, sazonalidade entre outros.
 
 Em comparação com a regressão, o método faz suposições adicionais que permitem
@@ -512,4 +512,86 @@ $$
 O problema fica resumido a estimar dois parâmetros: $\ell_0$ e $\alpha$.
 
 
+---
 
+# Holt
+
+Extende a suavização expoencial simples adicionando a tendência:
+
+$$
+\begin{align*}
+  \text{Forecast equation}&& \hat{y}_{t+h|t} &= \ell_{t} + hb_{t} \\
+  \text{Level equation}   && \ell_{t} &= \alpha y_{t} + (1 - \alpha)(\ell_{t-1} + b_{t-1})\\
+  \text{Trend equation}   && b_{t}    &= \beta^*(\ell_{t} - \ell_{t-1}) + (1 -\beta^*)b_{t-1},
+\end{align*}
+$$
+
+
+Assim como o 'nível' -  $\ell_t$ - , a tendência é estimada como uma média móvel das
+anteriores. 
+
+Também podemos adicionar dampening:
+
+$$
+\begin{align*}
+  \hat{y}_{t+h|t} &= \ell_{t} + (\phi+\phi^2 + \dots + \phi^{h})b_{t}
+\end{align*}
+$$
+
+---
+
+# Holt-Winters
+
+Extende o método do Holt adicionando um componente de sazonalidade:
+
+$$
+\begin{align*}
+  \hat{y}_{t+h|t} &= \ell_{t} + hb_{t} + s_{t+h-m(k+1)} \\
+  \ell_{t} &= \alpha(y_{t} - s_{t-m}) + (1 - \alpha)(\ell_{t-1} + b_{t-1})\\
+  b_{t} &= \beta^*(\ell_{t} - \ell_{t-1}) + (1 - \beta^*)b_{t-1}\\
+  s_{t} &= \gamma (y_{t}-\ell_{t-1}-b_{t-1}) + (1-\gamma)s_{t-m},
+\end{align*}
+$$
+
+Em alguns casos escrevemos a equação de forma multiplicativa:
+
+$$
+\begin{align*}
+  \hat{y}_{t+h|t} &= (\ell_{t} + hb_{t})s_{t+h-m(k+1)} \\
+  \ell_{t} &= \alpha \frac{y_{t}}{s_{t-m}} + (1 - \alpha)(\ell_{t-1} + b_{t-1})\\
+  b_{t} &= \beta^*(\ell_{t}-\ell_{t-1}) + (1 - \beta^*)b_{t-1}                \\
+  s_{t} &= \gamma \frac{y_{t}}{(\ell_{t-1} + b_{t-1})} + (1 - \gamma)s_{t-m}.
+\end{align*}
+$$
+
+---
+
+# ETS
+
+$$
+\begin{align}
+  y_t &= \ell_{t-1} + \varepsilon_t \tag{8.3}\\
+  \ell_t&=\ell_{t-1}+\alpha \varepsilon_t. \tag{8.4}
+\end{align}
+$$ 
+
+$\varepsilon_t \sim NID(0, \sigma^2)$ - o erro tem distribuição normal
+com média 0 e variância $\sigma^2$.
+
+O erro também pode ser multiplicativo. Nesse caso temos:
+
+$$
+\begin{align*}
+  y_t&=\ell_{t-1}(1+\varepsilon_t)\\
+  \ell_t&=\ell_{t-1}(1+\alpha \varepsilon_t).
+\end{align*}
+$$
+A estimativa pontual fica exatamente igual, o que muda é o intervalo de confiança.
+
+---
+
+# Resumo
+
+![](img/ets.png)
+
+![](img/abrev.png)
