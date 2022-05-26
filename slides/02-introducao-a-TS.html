@@ -464,6 +464,30 @@ $$
 
 # ETS
 
+$$
+`\begin{align}
+  y_t &amp;= \ell_{t-1} + \varepsilon_t \tag{8.3}\\
+  \ell_t&amp;=\ell_{t-1}+\alpha \varepsilon_t. \tag{8.4}
+\end{align}`
+$$ 
+
+`\(\varepsilon_t \sim NID(0, \sigma^2)\)` - o erro tem distribuição normal
+com média 0 e variância `\(\sigma^2\)`.
+
+O erro também pode ser multiplicativo. Nesse caso temos:
+
+$$
+`\begin{align*}
+  y_t&amp;=\ell_{t-1}(1+\varepsilon_t)\\
+  \ell_t&amp;=\ell_{t-1}(1+\alpha \varepsilon_t).
+\end{align*}`
+$$
+A estimativa pontual fica exatamente igual, o que muda é o intervalo de confiança.
+
+---
+
+# Resumo
+
 ![](img/ets.png)
 
 ![](img/abrev.png)
