@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Modelagem de Séries Temporais</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="" />
+    <script src="libs/header-attrs-2.11/header-attrs.js"></script>
+    <script src="libs/clipboard-2.0.6/clipboard.min.js"></script>
+    <link href="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.css" rel="stylesheet" />
+    <script src="libs/xaringanExtra-clipboard-0.2.6/xaringanExtra-clipboard.js"></script>
+    <script>window.xaringanExtraClipboard(null, {"button":"Copy Code","success":"Copied!","error":"Press Ctrl+C to Copy"})</script>
+    <link rel="stylesheet" href="css/xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Modelagem de Séries Temporais
+### <img src = 'https://d33wubrfki0l68.cloudfront.net/9b0699f18268059bdd2e5c21538a29eade7cbd2b/67e5c/img/logo/cursor1-5.png' width = '20%'>
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+class: middle, center
+
+---
+
+# Modelos AR
+
+- No nosso exemplo de suavização exponencial temos a fórmula:
+
+`$$\hat{y}(t) = \alpha y(t) + (1-\alpha)\hat{y}(t-1)$$`
+Como a mesma fórmula funciona para `\(t-1\)`, também temos que:
+
+`$$\hat{y}(t-1) = \alpha y(t-1) + (1-\alpha)\hat{y}(t-2)$$`
+Substituindo fica:
+
+`$$\hat{y}(t) = \alpha y(t) + (1-\alpha)\alpha y(t-1) + (1-\alpha)^2\hat{y}(t-2).$$`
+Logo, estamos construindo uma previsão `\(\hat{y}\)` que é a média das anteriores, mas uma média que dá muito mais peso para a primeira do que as anteriores.
+
+---
+
+# Modelos AR
+
+- De fato, modelos com essa cara são importantes e recebem até um nome específico: modelos auto-regressivos. Nesses modelos, a equação da nossa previsão é parecida com:
+
+`$$y_t = \phi_1 y_{t-1} + \phi_2 y_{t-2}$$`
+Claro que podemos pegar muitos dados para trás: 
+`$$y_t = \phi_1y_{t-1}+\phi_2 y_{t-2} + ... \phi_{p}y_{t-p}$$`
+Normalmente admitimos que essa equação tem algum tipo de erro, então, parecido com o caso de uma regressão, dizemos que o modelo tem um erro `\(\epsilon_t\)` ruído branco:
+
+`$$y_t = \phi_1y_{t-1}+\phi_2 y_{t-2} + ... \phi_{p}y_{t-p} + \epsilon_t$$`
+Dizemos que esse modelo é Auto-Regressivo de ordem `\(p\)` ou `\(AR(p)\)`
+
+---
+
+# Exemplos de modelos AR
+
+Modelos AR normalmente desenham retinhas em que pontos próximos são parecidos:
+
+escolhendo `\(p = 1\)` e `\(\phi_1 = 0.9\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+---
+
+# Exemplos de modelos AR
+
+Note como esse desenho é diferente do ruído branco:
+
+Inclusive, o ruído branco aparece quando escolhemos `\(p = 1\)` e `\(\phi_1 = 0\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+---
+
+# Exemplos de modelos AR
+
+Exemplo muito especial: 
+
+O gráfico abaixo, um AR com `\(p = 1\)` e `\(\phi_1 = 1\)`, te lembra alguma coisa?
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+
+---
+
+# Porque o modelo auto regressivo é importante?
+
+- Alguns fenômenos são quase que perfeitamente 
+modelos AR, como o preço de uma ação, por exemplo.
+
+- Gráficos de ACF e PACF, que as vezes são meio difícies de interpretar, tem padrões específicos no modelo. 
+
+- O AR(1), por exemplo, tem uma ACF bem especial
+
+- Modelos auto-regressivos costumam ter ACF que decaem rápido, mas ficam um bom tempo longe do zero. No caso do AR(1), a ACF tem até fórmula:
+
+`$$ACF(t) = \phi_1^t$$`
+
+---
+
+# ACF do AR(1)
+
+Vamos pensar no porque isso é desse jeito com `\(\phi_1 = .8\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+
+---
+
+# ACF de um AR com coeficiente negativo
+
+Quando `\(\phi\)` é negativo fica mais estranho:
+
+`\(\phi_1 = -.8\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+
+---
+
+# PACF
+
+Justamente pensando no impacto "persistente" do passado na série como um todo, foi invetado o conceito de **F**unção **A**uto **C**orrelação **P**arcial. Ela é que nem a auto correlação, mas ao invés de fazer a correlação diretamente, ela "limpa" os efeitos persistentes fazendo regressões.
+
+Por exemplo, vamos pensar no modelo AR(1):
+
+`$$y_t = y_{t-1} + \epsilon_t$$`
+`$$y_{t-1} = y_{t-2}+\epsilon_{t-1} \implies y_{t-2} = y_{t-1}-\epsilon_{t-1}$$`
+
+Como tanto o `\(y_t\)` quanto o `\(y_{t-2}\)` podem ser escritos em função de `\(y_{t-1}\)`, é natural que eles sejam correlacionados: eles são montados a partir do mesmo número. O que a PACF faz é calcular a correlação entre `\(\epsilon_{t-1}\)` e `\(\epsilon_{t}\)`, esses sim são não rorrelacionados.
+
+---
+
+# PACF na prática
+
+A PACF na prática nos ajuda a identificar o grau adequado de autocorrelação de uma série. Note como é a forma da PACF de um AR(1) com `\(\phi_1=.8\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+
+---
+
+# PACF na prática
+
+PACF de um AR(2) e `\(\phi_1=.7\)` e `\(\phi_2=.3\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+
+---
+
+# PACF na prática
+
+
+
+---
+
+# PACF na prática
+
+ACF com bastante autocorrelação:
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+
+---
+
+# PACF na prática
+
+PACF consegue identificar que muita dessa correlação é reduntante, temos uma autocorrelação no primeiro grau muito alta e talvez uma autocorrelação de ordem maior.
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+
+---
+
+# Como modelos alterar um modelo AR
+
+Pensar em um AR ajuda a interpretar auto-correlações, mas as PACFs típicas de um modelo AR são muito rígidas. A PACF da série da ANAC não concorda com um AR simples:
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+
+---
+
+# Processo MA
+
+Uma média móvel usa uma ideia parecida com a do AR para montar um modelo que se parece com o ruído branco, mas é varia menos em janelas próximas
+
+`$$y_t = \epsilon_t + \theta_1\epsilon_{t-1}+...+\theta_q\epsilon_{t-q}$$`
+
+---
+
+# Ruído branco (de novo)
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
+
+---
+
+# Média movel
+
+Vamos escolher `\(q=1\)` e `\(\theta_1 = 0.9\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-15-1.png)&lt;!-- --&gt;
+
+---
+
+# ACF do modelo MA(q)
+
+`\(q=1\)` e `\(\theta_q = 0.9\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-16-1.png)&lt;!-- --&gt;
+
+---
+
+# ACF do modelo MA(q)
+
+`\(q=2\)` e `\(\theta_1 = 0.9\)`, `\(\theta_2 = 0.9\)`
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
+
+---
+
+# Processo ARMA
+
+Um processo ARMA é um processo que mistura a parte autoregressiva com o resíduo média móvel, que pode ter correlações em um janela específica. Isso garante que o "desenho" de um processo arma é menos dentado do que um modelo auto regressivo simples. Considere essa simulação de um ARMA(1,1):
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
+
+---
+
+# ARMA(1, 6)
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-19-1.png)&lt;!-- --&gt;
+
+---
+
+# Intuição geral
+
+Um modelo ARMA é um modelo:
+
+- De caráter **Auto Regressivo**: `\(y_t\)`, `\(y_{y-1}\)`, `\(y_{t-2}\)` etc podem ter relação direta e persistente entre eles.
+- Com resíduos em **Média Movel**: `\(y_{t-1}\)` vai a `\(y_{t}\)` de maneira suave, similar ao jeito que `\(y_{t-2}\)` foi a `\(y_{t-1}\)`
+
+Aparentemente olhando todos os modelos `\(ARMA(p,q)\)` temos uma grande ferramenta para ajustarmos praticamente qualquer série temporal, mas faltam dois elementos **tendência** e **sazonalidade**.
+
+---
+
+# Diferenças
+
+Um jeito rudimentar de "limpar" uma série temporal de tendência e possivelmente de sazonalidade é através do método das diferenças. Isso é, criar uma nova série temporal `\(d\)` da seguinte forma:
+
+`$$d_t = y_{t}-y_{t-1}$$`
+---
+
+# Voltando à série da ANAC
+
+Essa série tem tendência e possivelmente também tem sazonalidade:
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-20-1.png)&lt;!-- --&gt;
+
+---
+
+# Diferenças da série da ANAC
+
+Aqui a tendência sumiu:
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-21-1.png)&lt;!-- --&gt;
+
+---
+
+# ACF da série de Diferenças da ANAC
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-22-1.png)&lt;!-- --&gt;
+
+---
+
+# PACF da série de Diferenças da ANAC
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-23-1.png)&lt;!-- --&gt;
+
+---
+
+# Diferença da diferença
+
+Aqui a série talvez já possa ser modelada adequadamente por um ARMA...
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-24-1.png)&lt;!-- --&gt;
+
+---
+
+# ACF da série de Diferenças da ANAC
+
+![](03-modelos-arima_files/figure-html/unnamed-chunk-25-1.png)&lt;!-- --&gt;
+
+---
+
+# Modelo ARIMA
+
+Assim como sugerimos no último exemplo, um modelo ARIMA nada mais é que um modelo ARMA (auto regressivo e com resíduo em média móvel) ajustado à uma (ou mais) diferenças de uma série temporal. Justamente por essa característica, fora os pesos, um modelo ARIMA costima vir acompanhando de três letras:
+
+- `\(p\)` que vem do `\(AR(p)\)`,
+- `\(d\)` que vem da ordem da diferença (se é diferença simples, ou diferença da diferença, ou diferença da diferença da diferença etc)
+- `\(q\)` que vem do `\(MA(q)\)`
+
+Logo, um `\(ARIMA(p, 1, q)\)` seria:
+
+`$$y_{t}-y_{t-1} = d_t \sim ARMA(p, q)$$`
+Já um `\(ARIMA(p, 2, q)\)` seria: 
+
+`$$d_t - d_{t-1} = y_{t}-y_{t-1}-y_{t-1}+y_{t-2} \sim ARMA(p, q)$$`
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
