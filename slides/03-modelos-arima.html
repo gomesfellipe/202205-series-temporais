@@ -229,6 +229,10 @@ Vamos escolher `\(q=1\)` e `\(\theta_1 = 0.9\)`
 
 Um processo ARMA é um processo que mistura a parte autoregressiva com o resíduo média móvel, que pode ter correlações em um janela específica. Isso garante que o "desenho" de um processo arma é menos dentado do que um modelo auto regressivo simples. Considere essa simulação de um ARMA(1,1):
 
+---
+
+# ARMA(1,1)
+
 ![](03-modelos-arima_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
 
 ---
@@ -313,6 +317,12 @@ Logo, um `\(ARIMA(p, 1, q)\)` seria:
 Já um `\(ARIMA(p, 2, q)\)` seria: 
 
 `$$d_t - d_{t-1} = y_{t}-y_{t-1}-y_{t-1}+y_{t-2} \sim ARMA(p, q)$$`
+
+---
+
+# ARIMA Sazonal
+
+Temos ainda a situação em que tentamos estimar dois ARMAS ao mesmo tempo
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

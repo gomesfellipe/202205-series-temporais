@@ -22,7 +22,7 @@ knit: pagedown::chrome_print
 library(tidyverse)
 library(ggplot2)
 
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, error = FALSE, fig.height = 8, fig.width = 12)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, error = FALSE, fig.height = 7, fig.width = 10)
 
 ```
 
@@ -446,6 +446,10 @@ arima.sim(n=300, list(ma = c(0.9, 0.9))) |>
 
 Um processo ARMA é um processo que mistura a parte autoregressiva com o resíduo média móvel, que pode ter correlações em um janela específica. Isso garante que o "desenho" de um processo arma é menos dentado do que um modelo auto regressivo simples. Considere essa simulação de um ARMA(1,1):
 
+---
+
+# ARMA(1,1)
+
 ```{r}
 tibble(
     y = as.numeric(arima.sim(n = 200, list(ar = c(.9), ma = c(.9))))
@@ -600,3 +604,9 @@ $$y_{t}-y_{t-1} = d_t \sim ARMA(p, q)$$
 Já um $ARIMA(p, 2, q)$ seria: 
 
 $$d_t - d_{t-1} = y_{t}-y_{t-1}-y_{t-1}+y_{t-2} \sim ARMA(p, q)$$
+
+---
+
+# ARIMA Sazonal
+
+Temos ainda a situação em que tentamos estimar dois ARMAS ao mesmo tempo
