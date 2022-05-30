@@ -17,5 +17,30 @@ dados <- x %>%
     DATA = lubridate::make_date(ANO, MES)
   )
 
+dados_regiao <- x %>%
+  filter(
+    (!is.na(AEROPORTO_DE_ORIGEM_UF) | !is.na(AEROPORTO_DE_DESTINO_UF))
+  ) %>%
+  mutate(
+    AEROPORTO_DE_DESTINO_REGIAO = dplyr::if_else(
+      is.na(AEROPORTO_DE_DESTINO_REGIAO),
+      "EXTERIOR",
+      AEROPORTO_DE_DESTINO_REGIAO),
+    AEROPORTO_DE_DESTINO_UF = dplyr::if_else(
+      is.na(AEROPORTO_DE_DESTINO_UF),
+      "EXTERIOR",
+      AEROPORTO_DE_DESTINO_UF)
+  ) |>
+  group_by(ANO, MES, AEROPORTO_DE_DESTINO_REGIAO, AEROPORTO_DE_DESTINO_UF) %>%
+  summarise(.groups = "drop",
+            PASSAGEIROS_PAGOS = sum(PASSAGEIROS_PAGOS, na.rm = TRUE),
+            CARGA_PAGA_KG = sum(CARGA_PAGA_KG, na.rm = TRUE)
+  ) %>%
+  mutate(
+    DATA = lubridate::make_date(ANO, MES)
+  )
+
 saveRDS(dados, "dados/anac-sp.rds")
+saveRDS(dados_regiao, "dados/anac-br.rds")
+
 
