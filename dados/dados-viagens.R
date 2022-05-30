@@ -43,4 +43,19 @@ dados_regiao <- x %>%
 saveRDS(dados, "dados/anac-sp.rds")
 saveRDS(dados_regiao, "dados/anac-br.rds")
 
+anac_regiao_ts |>
+  filter(REGIAO == "SUDESTE") |>
+  gg_season(PASSAGEIROS_PAGOS)
+
+anac_regiao_ts |>
+  #filter(UF == "AL") |>
+  #filter(UF == "SP") |>
+  gg_season(PASSAGEIROS_PAGOS)
+
+anac_regiao_ts |>
+  #filter(UF == "AL") |>
+  filter(UF == "SP") |>
+  gg_tsdisplay(PASSAGEIROS_PAGOS,
+               plot_type = "partial",
+               lag_max = 60)
 

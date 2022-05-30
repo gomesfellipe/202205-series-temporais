@@ -1,0 +1,107 @@
+---
+title: "Modelagem de Séries Temporais"
+author: "<img src = 'https://d33wubrfki0l68.cloudfront.net/9b0699f18268059bdd2e5c21538a29eade7cbd2b/67e5c/img/logo/cursor1-5.png' width = '20%'>"
+date: ""
+output:
+  xaringan::moon_reader:
+    css: ["css/xaringan-themer.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+knit: pagedown::chrome_print
+---
+
+```{r, include = FALSE}
+
+library(tidyverse)
+library(ggplot2)
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, error = FALSE, fig.height = 7, fig.width = 10)
+
+```
+
+
+class: middle, center
+
+---
+
+# Séries em estrutura hierárquica
+
+Grande parte das séries temporais podem ser desagregadas em níveis pois respeitam algum tipo de hierarquia.
+
+```{r, out.width="50%", fig.align="center"}
+knitr::include_graphics("https://otexts.com/fpp3/figs/hts.png")
+```
+
+---
+
+# Séries em estrutura hierárquica
+
+Esse tipo de estrutura é um outro jeito de olhar algumas fórmulas:
+
+$$y_t = y^A_t+y^B_t \\ y_t^A = y_t^{AA} + y_t^{AB} + y_t^{AC} \\ y_t^B = y_t^{BA} + y_t^{BB} + y_t^{BC}$$
+
+---
+
+# Séries em estrutura hierárquica
+
+Se considerarmos que $y_t$ é a nossa série de passageiros teremos
+
+$$y_t^{BRASIL} = y_t^{SUL}+y_t^{SUD}+y_t^{CE-O}+y_t^{NORT}+y_t^{NORD} + y_t^{EXT}$$
+```{r}
+
+library(tsibble)
+library(feasts)
+
+anac_regiao <- readRDS("../dados/anac-br.rds")
+
+anac_regiao_ts <- anac_regiao %>%
+  filter(
+    AEROPORTO_DE_DESTINO_REGIAO != "NÃO IDENTIFICADO") |> 
+  rename(
+    REGIAO = AEROPORTO_DE_DESTINO_REGIAO,
+    UF = AEROPORTO_DE_DESTINO_UF
+  ) |> 
+  mutate(DATA_ym = tsibble::yearmonth(paste(ANO, MES, sep = "-"))) %>%
+  mutate(
+    TEMPO_DESDE_INICIO = difftime(
+      DATA,
+      lubridate::ymd("1999-12-01"),
+      units = "days"
+    )/30,
+    LAG_1 = lag(PASSAGEIROS_PAGOS, 1, default = 0)
+  ) |> 
+  as_tsibble(index = DATA_ym, key = c(
+    UF, REGIAO)) |>
+  select(PASSAGEIROS_PAGOS, everything()) |> 
+  filter(DATA_ym <= as.Date("2019-12-31"))
+```
+
+```{r}
+anac_regiao_ts |> 
+  autoplot() +
+  facet_wrap(~REGIAO, scales = 'free')
+```
+
+---
+
+# Séries em estrutura hierárquica
+
+Quando nos deparamos com uma série como essa e nosso interesse é previsão de maneira geral, temos algumas possibilidades:
+
+- Queremos prever $y_t$ diretamente;
+- Queremos prever $y_t^{ESTADO}$ para todos os estados e constituir $y_t$ a partir das fórmulas da hierarquia;
+- Queremos prever $y_t$ diretamente e reconstituir $y_t^{GRUPO}$ com alguma fórmula, como por exempo: $y_t = 5\% \times y_t^{GRUPO}$
+- Queremos prever $y_t^{SUD}, y_t^{SUL}, ...$ etc, reconstituir $y_t$ a partir das fórmulas, enquanto pros estados aplicamos uma fórmula
+
+Qualquer uma dessas pode nos dar a melhor previsão seja para $y_t$, seja para $y_t^{ESTADO}$
+
+---
+
+# Séries em estrutura hierárquica
+
+Vamos ao R!
+
+---
