@@ -45,8 +45,8 @@ anac_ts |>
 split <- time_series_split(
   anac,
   DATA,
-  initial = "16 years",
-  assess = "3 year"
+  initial = "17 years",
+  assess = "2 year"
 )
 
 plot_time_series_cv_plan(
@@ -75,10 +75,10 @@ suavizacao <- ets_spec |>
   fit(PASSAGEIROS_PAGOS ~ DATA, training(split))
 
 modelo_tbl <- modeltime_table(
-  regressao,
-  arima,
-  arima_2,
-  suavizacao
+  #regressao,
+  arima
+  #arima_2,
+  #suavizacao
 )
 
 calibration_tbl <- modelo_tbl |>
