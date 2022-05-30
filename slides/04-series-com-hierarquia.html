@@ -49,8 +49,23 @@ Se considerarmos que `\(y_t\)` é a nossa série de passageiros teremos
 
 ![](04-series-com-hierarquia_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
 
+---
+
+# Séries em estrutura hierárquica
+
+Quando nos deparamos com uma série como essa e nosso interesse é previsão de maneira geral, temos algumas possibilidades:
+
+- Queremos prever `\(y_t\)` diretamente;
+- Queremos prever `\(y_t^{ESTADO}\)` para todos os estados e constituir `\(y_t\)` a partir das fórmulas da hierarquia;
+- Queremos prever `\(y_t\)` diretamente e reconstituir `\(y_t^{GRUPO}\)` com alguma fórmula, como por exempo: `\(y_t = 5\% \times y_t^{GRUPO}\)`
+
+Qualquer uma dessas pode nos dar a melhor previsão seja para `\(y_t\)`, seja para `\(y_t^{ESTADO}\)`
 
 ---
+
+# Séries em estrutura hierárquica
+
+Vamos ao R!
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

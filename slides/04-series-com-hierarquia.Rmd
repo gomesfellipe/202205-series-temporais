@@ -92,9 +92,7 @@ anac_regiao_ts |>
 Quando nos deparamos com uma série como essa e nosso interesse é previsão de maneira geral, temos algumas possibilidades:
 
 - Queremos prever $y_t$ diretamente;
-- Queremos prever $y_t^{ESTADO}$ para todos os estados e constituir $y_t$ a partir das fórmulas da hierarquia;
-- Queremos prever $y_t$ diretamente e reconstituir $y_t^{GRUPO}$ com alguma fórmula, como por exempo: $y_t = 5\% \times y_t^{GRUPO}$
-- Queremos prever $y_t^{SUD}, y_t^{SUL}, ...$ etc, reconstituir $y_t$ a partir das fórmulas, enquanto pros estados aplicamos uma fórmula
+- Queremos prever $y_t^{ESTADO}$ para todos os estados e constituir $y_t$ a partir das fórmulas da hierarquia.
 
 Qualquer uma dessas pode nos dar a melhor previsão seja para $y_t$, seja para $y_t^{ESTADO}$
 
@@ -103,5 +101,3 @@ Qualquer uma dessas pode nos dar a melhor previsão seja para $y_t$, seja para $
 # Séries em estrutura hierárquica
 
 Vamos ao R!
-
----

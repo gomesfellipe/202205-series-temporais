@@ -39,6 +39,8 @@ anac_regiao %>%
     DATA, PASSAGEIROS_PAGOS, .facet_ncol = 2
   )
 
+meses_previsao <- 24
+
 anac_regiao_nested <- anac_regiao |>
   mutate(
     id_serie = paste0(REGIAO, UF)
@@ -47,7 +49,7 @@ anac_regiao_nested <- anac_regiao |>
   extend_timeseries(
     .id_var        = id_serie,
     .date_var      = DATA,
-    .length_future = 12
+    .length_future = meses_previsao
   ) %>%
 
   # 2. Nesting: We'll group by id, and create a future dataset
@@ -55,15 +57,15 @@ anac_regiao_nested <- anac_regiao |>
   #    an actual dataset that contains 104 weeks (2-years of data)
   nest_timeseries(
     .id_var        = id_serie,
-    .length_future = 12,
-    .length_actual = 228-12
+    .length_future = meses_previsao,
+    .length_actual = 228-meses_previsao
   ) %>%
 
   # 3. Splitting: We'll take the actual data and create splits
   #    for accuracy and confidence interval estimation of 52 weeks (test)
   #    and the rest is training data
   split_nested_timeseries(
-    .length_test = 12
+    .length_test = meses_previsao
   )
 
 rec_arima <- recipe(PASSAGEIROS_PAGOS ~ DATA,
@@ -77,10 +79,57 @@ wflw_arima <- workflow() %>%
   ) %>%
   add_recipe(rec_arima)
 
+wflw_ets <- workflow() %>%
+  add_model(
+    seasonal_reg() |>
+      set_engine("tbats")
+  ) %>%
+  add_recipe(rec_arima)
+
+wflw_ets <- workflow() %>%
+  add_model(
+    modeltime::seasonal_reg() |>
+      set_engine("tbats")
+  ) %>%
+  add_recipe(rec_arima)
+
 modelos_ajustados <- modeltime_nested_fit(
   nested_data = anac_regiao_nested,
+  wflw_ets,
   wflw_arima
 )
 
 modelos_ajustados |>
-  modeltime::extract_nested_test_accuracy()
+  modeltime::extract_nested_test_accuracy() |>
+  View()
+
+melhores_modelos <- modelos_ajustados |>
+  modeltime::modeltime_nested_select_best() |>
+  modeltime::extract_nested_best_model_report()
+
+modelos_ajustados |>
+  modeltime_nested_select_best() |>
+  extract_nested_test_forecast() |>
+  mutate(
+    previsto = if_else(.model_desc == "ACTUAL", "observado", "previsto")
+  ) |>
+  group_by(.index,
+           #.model_id,
+           previsto) |>
+  summarise(
+    .value = sum(.value)
+  ) |>
+  pivot_wider(names_from = previsto,
+              values_from = .value) |>
+  #group_by(.model_id) |>
+  ungroup() |>
+  summarise(
+    MASE = mase_vec(observado, previsto),
+    MAPE = mape_vec(observado, previsto),
+    RSQ = rsq_vec(observado, previsto)
+  )
+
+modelos_ajustados |>
+  extract_nested_test_forecast() |>
+  filter(id_serie == "CENTRO-OESTEGO") |>
+  plot_modeltime_forecast()
