@@ -1,0 +1,548 @@
+---
+title: "Trabalho Final"
+subtitle: "Curso R - Séries Temporais"
+author: "Fellipe Gomes"
+date: "`r format(Sys.time(), '%d/%m/%Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tsibble)
+library(feasts)
+
+# library(patchwork)
+library(modeltime)
+library(tidymodels)
+library(boostime)
+
+theme_set(theme_classic()+
+            theme(legend.position='bottom'))
+
+knitr::opts_chunk$set(echo = TRUE, error = F, message = F, warning = F)
+```
+
+# Sobre os dados
+
+Os dados utilizados nesta análise possuem como base notificações obrigatórias de dengue no estado de Minas Gerais entre 2000 e 2019. Foram retirados do Sistema TABWIN, com origem do SINAN e Ministério da Saúde (por meio da lei de acesso a informação), ja que somente a partir de 2013 os dados estão disponíveis na internet.  Esses dados são fichas preenchidas por médicos após a suspeita de dengue. Esses casos podem ou não ser confirmados posteriormente, sendo que os descartados foram retirados do banco de dados.
+
+# Carregar dados
+
+Importar os dados:
+
+```{r}
+dengue <- readRDS("../trab_final/dengue_mg.rds") 
+```
+
+# Análise Descritiva 
+
+Número de casos por MesoRegiões de Minas Gerais:
+
+```{r}
+dengue %>% 
+  group_by(Nome_Mesorregião) %>% 
+  summarise(Casos = sum(Casos)) %>%
+  arrange(-Casos) %>% 
+  mutate(prop = paste0(round(Casos/sum(Casos)*100, 2), "%"))
+```
+
+📌 Quase metade dos casos ocorrem na MesoRegão Metropolitana de Belo Horizonte.
+
+Número de casos por MicroRegiões de Minas Gerais:
+
+```{r}
+dengue %>% 
+  group_by(Nome_Mesorregião, Nome_microrregiao) %>% 
+  summarise(Casos = sum(Casos)) %>%
+  arrange(-Casos) %>% 
+  ungroup() %>% 
+  mutate(prop = paste0(round(Casos/sum(Casos)*100, 2), "%"))
+```
+
+📌 Grande maioria dos casos ocorrem na MicroRegão Belo Horizonte. 
+
+Conferir o comportamento geral das séries disponíveis na base de dados:
+
+```{r}
+dengue  %>%
+  ggplot(aes(x = Data, y=Casos))%+%
+  geom_line(aes(color = Nome_microrregiao), show.legend = F) %>%
+  plotly::ggplotly()
+```
+
+📌 Existe grande defasagem nos dados anteriores à 2010 que pode estar acontecendo por diversos motivos, como:
+
+1. Sub-notificação;
+2.  mudança de critério de notificação a partir de 2007
+3. Crescimento das áreas endemicas, ou seja, introdução de casos externos em comunidades que nao tinha dengue 
+4. Crescimento populacional 
+5. Maior mobilidade, logo mais chance de a dengue de um lugar pegar o outro. É possível perceber que, quando tem muita dengue em BH tem muita dengue nas outras cidades com bastante dengue.
+
+Obter a quantidade e proporção de casos por Micro Região:
+
+```{r}
+(pareto_stats <- dengue %>% 
+   group_by(Nome_microrregiao) %>% 
+   summarise(n_casos = sum(Casos)) %>% 
+   arrange(desc(n_casos)) %>% 
+   mutate(Nome_microrregiao = factor(Nome_microrregiao, levels=Nome_microrregiao),
+          prop_casos = n_casos / sum(n_casos) * 100,
+          cumulative = cumsum(n_casos) / sum(n_casos)
+   ))
+```
+
+De maneira visual:
+
+```{r}
+f <- max(pareto_stats$n_casos) 
+
+ggplot(pareto_stats, aes(x=Nome_microrregiao)) %+%  
+  geom_bar(aes(y=n_casos, fill=Nome_microrregiao),
+           stat="identity",show.legend = FALSE) %+%
+  geom_path(aes(y=cumulative*f, group=1),colour="red", size=0.9) %+%
+  geom_point(aes(y=cumulative*f, group=1),colour="red") %+%
+  scale_y_continuous("Casos", sec.axis = sec_axis(~./f, labels = scales::percent), n.breaks = 9, labels = scales::comma) %+%
+  scale_fill_grey() %+%
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position='none') 
+```
+
+💡 As 10 microregiões com maior número de casos acumulam ~70% de incidencia de dengue, portanto a análise será focada neste conjunto. 
+
+```{r}
+(microregioes_top <- pareto_stats %>% 
+   slice_max(n_casos, n=9) %>% 
+   mutate(Nome_microrregiao = as.character(Nome_microrregiao)))
+```
+
+# Análise de Séries Temporais
+
+## Preparar dados
+
+Converter o dataset para o formato `tsibble`, mantendo a série diária:
+
+```{r}
+ts_dengue_d <- dengue %>% 
+  select(Nome_microrregiao, Data, Casos) %>% 
+  as_tsibble(index = Data,
+             key = c(Nome_microrregiao))
+```
+
+Criar uma versão com o número de casos agregados por mês:
+
+```{r}
+ts_dengue_m <- dengue %>% 
+  mutate(Data = tsibble::yearmonth(paste(Ano, Mes, sep = "-"))) %>% 
+  group_by(Nome_microrregiao, Data) %>% 
+  summarise(Casos = sum(Casos)) %>% 
+  ungroup() %>% 
+  as_tsibble(index = Data,
+             key = c(Nome_microrregiao))
+```
+
+## Visualizar
+
+Conferir o comportamento das séries diárias:
+
+```{r}
+ts_dengue_d %>% 
+  filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>% 
+  autoplot(.vars = Casos) %>% 
+  plotly::ggplotly()
+```
+
+📌 Apesar das diferenças de escala, todas as séries possuem comportamento muito parecidos. Além disso parece haver sazonalidade em todas as séries. 
+
+Conferir o comportamento das séries agregadas por mês:
+
+```{r}
+ts_dengue_m %>% 
+  filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>% 
+  autoplot(.vars = Casos) %>% 
+  plotly::ggplotly()
+```
+
+📌 Um pouco mais suave mas ainda apresenta vários dias com nenhuma notificação (o que pode prejudar o desempenho de algums modelos de séries temporais)
+
+## Série Diária
+
+### Sazonalidade
+
+Conferir sazonalidade das séries:
+
+```{r, fig.height=7}
+ts_dengue_d %>% 
+  filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>% 
+  gg_season(y = Casos) 
+```
+
+📌 Existe um aumento no número de casos no primeiro semestre do ano. Os picos de casos podem variar entre microregiões.
+
+### Correlação entre os lags para Belo Horizonte:
+
+```{r, fig.height=7}
+ts_dengue_d %>% 
+  filter(Nome_microrregiao=='Belo Horizonte') %>% 
+  gg_lag(y=Casos, geom = "point", lag = 1:16)+
+  labs(title = "Belo Horizonte")
+```
+
+📌 Interpretação:
+
+- Parece haver alguma correlação com o *lag 7* para todos os dias;
+- Parece haver alguma correlação com o *lag 1* de acordo com o dia da semana.
+
+### Autocorrelação
+
+```{r, fig.height=5}
+ts_dengue_d %>% 
+  filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>% 
+  ACF(Casos) %>% 
+  autoplot()
+```
+
+📌 Parece existir bastante autocorrelação, com picos ocorrendo a cada 7 dias
+
+### Auto correlação parcial
+
+```{r}
+ts_dengue_d %>% 
+  filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>% 
+  PACF(Casos) %>% 
+  autoplot()
+```
+
+📌 A PACF consegue captar que muita dessa correlação é "redundante", temos uma autocorrelação nos primeiros 7 lags altas (com detaque para lag 1 e lag 7) e após isso a PACF estabiliza.
+
+## Série Mensal
+
+### Sazonalidade 
+
+Correlação entre os lags mensais para Belo Horizonte:
+
+```{r, fig.height=7}
+ts_dengue_m %>% 
+  filter(Nome_microrregiao=='Belo Horizonte') %>% 
+  gg_lag(y=Casos, geom = "point", lag = 1:16)+
+  labs(title = "Belo Horizonte")
+```
+
+📌 Parece só haver alguma correlação no *lag 1*
+
+### Autocorrelação 
+
+```{r, fig.height=7}
+ts_dengue_m %>% 
+  filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>% 
+  ACF(Casos) %>% 
+  autoplot()
+```
+
+📌 Existe alguma correlação no lag 1 e logo após um decaimento até o *lag 3*.
+
+### Auto correlação parcial
+
+```{r}
+ts_dengue_m %>% 
+  filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>% 
+  PACF(Casos) %>% 
+  autoplot()
+```
+
+📌 Temos alguma autocorrelação nos primeiros 3 lags.
+
+### Decomposição da série
+
+Conferir cada componente da série mensal:
+
+```{r}
+ts_dengue_m %>%
+  filter(Nome_microrregiao %in% "Belo Horizonte") %>% 
+  as_tibble() %>% 
+  as_tsibble(index = Data) %>% 
+  model(
+    STL(Casos ~ season(12) + trend())
+  ) %>%
+  components() %>% 
+  autoplot()
+```
+
+📌Interpretação:
+
+- Não parece haver tendencia positiva ou negativa na série;
+- A saznolidade parece ocorrer de maneira anual de forma multiplicativa;
+- A maior quantidade de casos ocorre a partir de 2010 (pode ser devido à subnotificação pois a diferença é bem acentuada).
+
+# Modelagem
+
+Para a parte de modelagem deixaremos de usar o pacote `tsibble` e passaremos a utilizar o framework `modeltime` e pacotes relacionados.
+
+## Preparar dados
+
+Preparar dados para modelagem:
+
+```{r}
+(ts_dengue <- dengue %>%
+   filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>% 
+   mutate(DATA_ym = tsibble::yearmonth(paste(lubridate::year(Data),
+                                             lubridate::month(Data), sep = "-"))) %>%
+   group_by(Nome_microrregiao, Nome_Mesorregião, DATA_ym) %>% 
+   summarise(Casos = sum(Casos)) %>%  
+   ungroup() %>% 
+   mutate(Data = lubridate::dym(paste0("01 ", DATA_ym))) %>% 
+   mutate(
+     TEMPO_DESDE_INICIO = difftime(
+       Data,
+       lubridate::ymd("2000-01-01"),
+       units = "days"
+     )/30,
+     LAG_1 = lag(Casos, 1, default = 0)
+   ) %>% 
+   mutate(TEMPO_DESDE_INICIO = as.numeric(TEMPO_DESDE_INICIO)) %>% 
+   filter(Data <= as.Date("2010-01-01")) )
+```
+
+Sem gaps nas séries, vejamos a quantidade de dados mensais para cada 
+
+```{r}
+ts_dengue %>% 
+  count(Nome_microrregiao, Nome_Mesorregião)
+```
+
+Vejamos o comportamento individual das séries selecionadas:
+
+```{r, fig.height=7}
+ts_dengue %>% 
+  ggplot(aes(x = DATA_ym, y = Casos))+
+  geom_line(aes(col = Nome_microrregiao), show.legend = F)+
+  facet_wrap(~Nome_microrregiao, ncol=3, scales='free')
+```
+
+O comportamento individual das séries selecionadas após aplicar transformação $f(y) = log(y+1)$:
+
+```{r, fig.height=7}
+ts_dengue %>% 
+  ggplot(aes(x = DATA_ym, y = log(Casos+1)))+
+  geom_line(aes(col = Nome_microrregiao), show.legend = F)+
+  facet_wrap(~Nome_microrregiao, ncol=3, scales='free')
+```
+
+📌 A série fica mais "comportada" para a aplicação dos modelos estatísticos
+
+Preparar as séries para modelagem no formato esperado pelo pacote `modeltime`:
+
+```{r}
+meses_previsao <- 12 # janela de previsao
+
+(ts_dengue_nested <- ts_dengue %>% 
+    mutate(
+      id_serie = paste0(Nome_microrregiao," / ", Nome_Mesorregião)
+    )  %>% 
+    extend_timeseries(
+      .id_var        = id_serie,
+      .date_var      = Data,
+      .length_future = meses_previsao
+    ) %>%
+    nest_timeseries(
+      .id_var        = id_serie,
+      .length_future = meses_previsao,
+      .length_actual = 121-meses_previsao
+    ) %>%
+    split_nested_timeseries(
+      .length_test = meses_previsao
+    ))
+```
+
+Definir o modelo e o pré-processamento
+
+```{r}
+rec_arima <- recipe(Casos ~ Data + TEMPO_DESDE_INICIO + LAG_1,
+                    extract_nested_train_split(ts_dengue_nested)) %>% 
+  step_log(Casos, offset = 1)
+```
+
+Ajustar modelos:
+
+- ets;
+- auto.arima;
+- tbats;
+- prophet;
+- auto.arima + xgb para modelar os resíduos;
+- auto.arima + catboost para modelar os resíduos.
+
+```{r}
+wflw_ets <- workflow() %>%
+  add_model(
+    exp_smoothing() %>%
+      set_engine("ets")
+  ) %>%
+  add_recipe(rec_arima)
+
+wflw_arima <- workflow() %>%
+  add_model(
+    arima_reg() %>%
+      set_engine("auto_arima")
+  ) %>%
+  add_recipe(rec_arima)
+
+wflw_tbats <- workflow() %>%
+  add_model(
+    seasonal_reg() %>%
+      set_engine("tbats")
+  ) %>%
+  add_recipe(rec_arima)
+
+wflw_prophet <- workflow() %>%
+  add_model(
+    prophet_reg() %>%
+      set_engine("prophet")
+  ) %>%
+  add_recipe(rec_arima)
+
+wflw_arima_xgb <- workflow() %>%
+  add_model(
+    arima_boost() %>%
+      set_engine("auto_arima_xgboost")
+  ) %>%
+  add_recipe(rec_arima)
+
+wflw_arima_cb <- workflow() %>%
+  add_model(
+    boostime::boost_arima() %>%
+      set_engine("auto_arima_catboost")
+  ) %>%
+  add_recipe(rec_arima)
+```
+
+<!-- https://albertoalmuinha.com/posts/2021-05-30-boostime_arima_catboost/boostime-arima-catboost/ -->
+
+Ajustar modelos:
+
+```{r, eval = F}
+modelos_ajustados <- modeltime_nested_fit(
+  nested_data = ts_dengue_nested,
+  wflw_ets,
+  wflw_arima,
+  wflw_tbats,
+  wflw_prophet,
+  wflw_arima_xgb,
+  wflw_arima_cb
+)
+```
+
+`Fitting models on training data... ■■■■■■■■■■■■■■■■■■ 100% | ETA:  0m`
+
+```{r, echo = F}
+# saveRDS(modelos_ajustados, 'modelos_ajustados.rds')
+modelos_ajustados <- readRDS('modelos_ajustados.rds')
+modelos_ajustados
+```
+
+Melhor modelo ajustado para cada série:
+
+```{r}
+# modelos_ajustados %>%
+#   modeltime::extract_nested_test_accuracy() %>%
+#   View()
+
+(melhores_modelos <- modelos_ajustados %>%
+   modeltime::modeltime_nested_select_best() %>%
+   modeltime::extract_nested_best_model_report())
+```
+
+Resultado geral dos modelos:
+
+```{r}
+modelos_ajustados %>%
+  modeltime_nested_select_best() %>%
+  extract_nested_test_forecast() %>%
+  mutate(
+    previsto = if_else(.model_desc == "ACTUAL", "observado", "previsto")
+  ) %>%
+  group_by(.index,
+           previsto) %>%
+  summarise(
+    .value = sum(.value)
+  ) %>%
+  pivot_wider(names_from = previsto,
+              values_from = .value) %>%
+  ungroup() %>%
+  summarise(
+    MASE = mase_vec(observado, previsto),
+    MAPE = mape_vec(observado, previsto),
+    RSQ = rsq_vec(observado, previsto)
+  )
+```
+
+Resultados para a região do modelo com melhor (menor) mase:
+
+```{r}
+micror = "Ipatinga / Vale do Rio Doce"
+modelos_ajustados %>%
+  extract_nested_test_forecast() %>%
+  filter(id_serie == micror) %>%
+  mutate(.value = exp(.value)-1,
+         .conf_lo = exp(.conf_lo)-1,
+         .conf_hi = exp(.conf_hi)-1,
+         ) %>% 
+  filter(.model_desc %in% c('ACTUAL', "TBATS   ")) %>% 
+  plot_modeltime_forecast(.title = micror)%>%
+  plotly::layout(legend = list(orientation = "h"))
+
+```
+
+Resultados para a região que apresentou melhor (menor) mape:
+
+```{r}
+micror = "Belo Horizonte / Metropolitana de Belo Horizonte"
+modelos_ajustados %>%
+  extract_nested_test_forecast() %>%
+  filter(id_serie == micror) %>%
+    mutate(.value = exp(.value)-1,
+         .conf_lo = exp(.conf_lo)-1,
+         .conf_hi = exp(.conf_hi)-1,
+         ) %>% 
+  filter(.model_desc %in% c('ACTUAL', 'ARIMA W XGBOOST ERRORS')) %>% 
+  plot_modeltime_forecast(.title = micror, )%>%
+  plotly::layout(legend = list(orientation = "h"))
+```
+
+Resultado para a região que apresentu pior (maior) smape:
+
+```{r}
+micror = "Divinópolis / Oeste de Minas"
+modelos_ajustados %>%
+  extract_nested_test_forecast() %>%
+  filter(id_serie == micror) %>%
+  mutate(.value = exp(.value)-1,
+         .conf_lo = exp(.conf_lo)-1,
+         .conf_hi = exp(.conf_hi)-1,
+         ) %>%
+  plot_modeltime_forecast(.title = micror)%>%
+  plotly::layout(legend = list(orientation = "h"))
+```
+
+
+<!-- ```{r} -->
+<!-- library(timetk) -->
+<!-- library(modeltime) -->
+
+<!-- ts_dengue_d %>% -->
+<!--   filter(Nome_microrregiao %in% microregioes_top$Nome_microrregiao) %>%  -->
+<!--   plot_time_series(Data, Casos) -->
+
+<!-- ts_dengue_d %>% -->
+<!--   plot_time_series_boxplot(Data, Casos, .period = "1 month") -->
+
+<!-- ts_dengue_d %>% -->
+<!--   plot_seasonal_diagnostics(Data, Casos) -->
+
+<!-- ts_dengue_d %>% -->
+<!--   plot_acf_diagnostics(Data, Casos) -->
+
+<!-- # não funciona pois temos missing -->
+<!-- ts_dengue_d %>% -->
+<!--   plot_stl_diagnostics(Data, Casos) -->
+<!-- ``` -->
+
+
